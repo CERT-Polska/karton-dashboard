@@ -1,0 +1,39 @@
+{% extends 'queue_layout.html' %}
+{% block tasks %}
+<h4>Tasks</h4>
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th scope="col">task</th>
+      <th scope="col">headers</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in queue.tasks %}
+    <tr>
+      <td>
+        <a href="/task/{{task.taskid}}">{{ task.taskid }}</a>
+      </td>
+      <td>
+        {% if task.data['priority'] != 'normal' %}
+        <span class="badge badge-dark">{{task.data['priority']}}</span>
+        {% endif %}
+        <span class="badge badge-light">{{task.data['status']}}</span>
+        {% for hdrname, hdrval in task.data['headers'].items() %}
+        {% if hdrname == 'type' %}
+        <span class="badge badge-primary">{{hdrname}}:{{hdrval}}</span>
+        {% elif hdrname == 'kind' %}
+        <span class="badge badge-info">{{hdrname}}:{{hdrval}}</span>
+        {% elif hdrname == 'stage' %}
+        <span class="badge badge-success">{{hdrname}}:{{hdrval}}</span>
+        {% elif hdrname == 'receiver' %}
+        {% else %}
+        <span class="badge badge-secondary">{{hdrname}}:{{hdrval}}</span>
+        {% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

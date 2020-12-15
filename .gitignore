@@ -1,0 +1,13 @@
+# Byte-compiled / optimized / DLL files
+*.swp
+venv/
+__pycache__/
+.mypy_cache/
+.pyre/
+.idea
+.vscode
+app.db
+config.py
+*.pyc
+karton.ini
+

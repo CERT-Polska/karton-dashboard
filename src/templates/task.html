@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="bs-component" style="padding-top: 100px">
+  <h3 class="text-center">task {{ task.taskid }}</h3>
+
+  <dl class="row">
+    <dt class="col-3">Status</dt>
+    <dd class="col-9"><span class="badge badge-light">{{task.data['status']}}</span></dd>
+    <dt class="col-3">Priority</dt>
+    <dd class="col-9"><span class="badge badge-dark">{{task.data['priority']}}</span></dd>
+    <dt class="col-3">Last status change</dt>
+    <dd class="col-9">{{task.last_update()}} ({{task.last_update_delta()}})</dd>
+    <dt class="col-3">UID</dt>
+    <dd class="col-9">{{task.data['uid']}}</dd>
+    <dt class="col-3">Parent UID</dt>
+    <dd class="col-9">{{task.data['parent_uid']}}</dd>
+    <dt class="col-3">Root UID</dt>
+    <dd class="col-9">
+      <a href="{{url_for('get_analysis', root_id=task.data['root_uid'])}}">
+      {{task.data['root_uid']}}
+      </a>
+    </dd>
+    <dt class="col-3">Origin</dt>
+    <dd class="col-9">
+      <a href="/queue/{{task.data['headers']['origin']}}">{{task.data['headers']['origin']}}</a>
+    </dd>
+    <dt class="col-3">Receiver</dt>
+    <dd class="col-9">
+      <a href="/queue/{{task.data['headers']['receiver']}}">{{task.data['headers']['receiver']}}</a>
+    </dd>
+    <dt class="col-3">Xrefs</dt>
+    <dd class="col-9">
+      <div class="btn-group btn-group-toggle" data-toggle="buttons">
+        <a href="https://buzz.cert.pl:8000/en-GB/app/search/karton_task_information?form.TASKUID={{task.data['root_uid']}}"
+          class="btn btn-sm btn-secondary">
+          view in splunk
+        </a>
+        <a href="https://mwdb.cert.pl/?q=meta.karton2%3A{{task.data['root_uid']}}" class="btn btn-sm btn-secondary">
+          find in mwdb
+        </a>
+      </div>
+    </dd>
+    <dt class="col-3">Headers</dt>
+    <dd class="col-9">
+      {% for hdrname, hdrval in task.data['headers'].items() %}
+      {% if hdrname == 'type' %}
+      <span class="badge badge-primary">{{hdrname}}:{{hdrval}}</span>
+      {% elif hdrname == 'kind' %}
+      <span class="badge badge-info">{{hdrname}}:{{hdrval}}</span>
+      {% elif hdrname == 'stage' %}
+      <span class="badge badge-success">{{hdrname}}:{{hdrval}}</span>
+      {% elif hdrname == 'receiver' %}
+      {% else %}
+      <span class="badge badge-secondary">{{hdrname}}:{{hdrval}}</span>
+      {% endif %}
+      {% endfor %}
+    </dd>
+  </dl>
+
+  <h4>Raw</h4>
+  <pre><code>{{task.prettyprint()}}</code></pre>
+
+</div>
+{% endblock %}

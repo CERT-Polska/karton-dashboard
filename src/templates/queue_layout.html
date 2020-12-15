@@ -1,0 +1,75 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="bs-component" style="padding-top: 100px">
+  <h3 class="text-center">queue {{ name }}</h3>
+  <dl class="row">
+    <dt class="col-3">Description</dt>
+    <dd class="col-9">
+      {% if queue.description %}
+      {{queue.description|safe}}
+      {% else %}
+      <pre>(none)</pre>
+      {% endif %}
+    </dd>
+    <dt class="col-3">Filters</dt>
+    <dd class="col-9">
+      {% for filter in queue.binds %}
+          <div>
+            {% for filtername, filterval in filter.items() %}
+            {% if filtername == 'type' %}
+            <span class="badge badge-primary">{{filtername}}:{{filterval}}</span>
+            {% elif filtername == 'kind' %}
+            <span class="badge badge-info">{{filtername}}:{{filterval}}</span>
+            {% elif filtername == 'stage' %}
+            <span class="badge badge-success">{{filtername}}:{{filterval}}</span>
+            {% else %}
+            <span class="badge badge-secondary">{{filtername}}:{{filterval}}</span>
+            {% endif %}
+            {% endfor %}
+          </div>
+      {% endfor %}
+    </dd>
+    <dt class="col-3">Library version</dt>
+    <dd class="col-9">
+      <span class="badge badge-info">{{ queue.version }}</span>
+    </dd>
+    <dt class="col-3">Queue persistence</dt>
+    <dd class="col-9">
+      {% if queue.persistent %}
+      <span class="badge badge-success">yes</span>
+      {% else %}
+      <span class="badge badge-danger">no</span>
+      {% endif %}
+    </dd>
+    <dt class="col-3"><a href={{url_for("get_queue", queue_name=name)}}>Spawned tasks</a></dt>
+    <dd class="col-9">
+      {% set length = queue.tasks | length %}
+      {% if length == 0 %}
+      <span class="badge badge-success">{{length}}</span>
+      {% elif length < 25 %}
+      <span class="badge badge-warning">{{length}}</span>
+      {% else %}
+      <span class="badge badge-danger">{{length}}</span>
+      {% endif %}
+    </dd>
+    <dt class="col-3"><a href={{url_for("get_crashed_queue", queue_name=name)}}>Crashed tasks</a></dt>
+    <dd class="col-9">
+      {% if queue.crashed | length > 0 %}
+      <span class="badge badge-danger">{{queue.crashed | length}}</span>
+      {% else %}
+      <span class="badge badge-success">{{queue.crashed | length}}</span>
+      {% endif %}
+    </dd>
+    <dt class="col-3">Replicas online</dt>
+    <dd class="col-9">
+      {% if queue.replicas > 0 %}
+      <span class="badge badge-success">{{queue.replicas}}</span>
+      {% else %}
+      <span class="badge badge-danger">{{queue.replicas}}</span>
+      {% endif %}
+    </dd>
+  </dl>
+  {% block tasks %}
+  {% endblock %}
+</div>
+{% endblock %}

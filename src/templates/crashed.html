@@ -1,0 +1,49 @@
+{% extends 'queue_layout.html' %}
+{% block tasks %}
+<h4>Crashed tasks</h4>
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th scope="col">task</th>
+      <th scope="col">headers</th>
+      <th scope="col">exception</th>
+      <th scope="col">retry</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in queue.crashed %}
+    <tr>
+      <td>
+        <a href="/task/{{task.taskid}}">{{ task.taskid }}</a>
+      </td>
+      <td>
+        {% if task.data['priority'] != 'normal' %}
+        <span class="badge badge-dark">{{task.data['priority']}}</span>
+        {% endif %}
+        <span class="badge badge-light">{{task.data['status']}}</span>
+        {% for hdrname, hdrval in task.data['headers'].items() %}
+        {% if hdrname == 'type' %}
+        <span class="badge badge-primary">{{hdrname}}:{{hdrval}}</span>
+        {% elif hdrname == 'kind' %}
+        <span class="badge badge-info">{{hdrname}}:{{hdrval}}</span>
+        {% elif hdrname == 'stage' %}
+        <span class="badge badge-success">{{hdrname}}:{{hdrval}}</span>
+        {% elif hdrname == 'receiver' %}
+        {% else %}
+        <span class="badge badge-secondary">{{hdrname}}:{{hdrval}}</span>
+        {% endif %}
+        {% endfor %}
+      </td>
+      <td>
+        {{ task.error[-1] }}
+      </td> 
+      <td>
+          <form action={{url_for("restart_task", task_id=task.taskid)}} method="POST" id="restartTask">
+          <button class="btn btn-dark" type="submit" form="restartTask" value="Submit">⭯</button>
+          </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
