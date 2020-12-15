@@ -58,11 +58,10 @@
         <td>
           {% set length = queue.crashed | length %}
           {% set url = url_for("get_crashed_queue", queue_name=queue.name) %}
-          {% if length == 0 %}
-          <span class="badge badge-success"><a href={{url}}>{{length}}</a></span>
-          {% else %}
-          <span class="badge badge-danger"><a class="text-light" href={{url}}>{{length}}</a></span>
-          {% endif %}
+          {% set badgeClass = "badge-success" if length == 0 else "badge-danger" %}
+          <span class="badge {{badgeClass}}">
+              <a href={{url}} style="color: inherit">{{length}}</a>
+          </span>
         </td>
         <td>
           {% if queue.replicas == 0 %}
