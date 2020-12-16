@@ -1,10 +1,9 @@
 import logging
-import json
 import textwrap
 import re
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 from flask import abort, Flask, render_template, send_from_directory, \
     jsonify, request, redirect  # type: ignore
@@ -25,6 +24,7 @@ mworks = CommonRoutes(app)
 logging.basicConfig(level=logging.INFO)
 
 karton = KartonBase(identity="karton.dashboard")
+
 
 class TaskView:
     """
@@ -71,8 +71,6 @@ class TaskView:
         return self._task.serialize(indent=indent)
 
 
-
-
 def pretty_delta(dt: datetime) -> str:
     diff = datetime.now() - dt
     seconds_diff = int(diff.total_seconds())
@@ -85,6 +83,7 @@ def pretty_delta(dt: datetime) -> str:
     return f"{hours_diff} hours ago"
 
 
+@app.template_filter('render_description')
 def render_description(description) -> Optional[str]:
     if not description:
         return None
@@ -118,8 +117,6 @@ def varz():
             karton_tasks.labels(name, priority, status).set(count)
         karton_replicas.labels(safe_name, queue.version).set(queue.replicas)
 
-    karton_logs.set(state.log_queue_length)
-
     return generate_latest()
 
 
@@ -132,7 +129,7 @@ def static(path: str):
 def get_queues():
     state = KartonState(karton.backend)
     return render_template(
-        "index.html", queues=state.queues, log_len=state.log_queue_length
+        "index.html", queues=state.queues
     )
 
 
@@ -208,7 +205,7 @@ def get_task_api(task_id):
 
 @app.route("/analysis/<root_id>", methods=["GET"])
 def get_analysis(root_id):
-    state = KartonState()
+    state = KartonState(karton.backend)
     analysis = state.analyses.get(root_id)
     if not analysis:
         abort(404)

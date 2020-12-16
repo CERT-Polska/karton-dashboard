@@ -6,7 +6,7 @@
     <dt class="col-3">Description</dt>
     <dd class="col-9">
       {% if queue.bind.info %}
-      {{queue.bind.info|safe}}
+      {{queue.bind.info|render_description|safe}}
       {% else %}
       <pre>(none)</pre>
       {% endif %}
