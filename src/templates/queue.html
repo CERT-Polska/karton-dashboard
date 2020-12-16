@@ -12,14 +12,14 @@
     {% for task in queue.tasks %}
     <tr>
       <td>
-        <a href="/task/{{task.taskid}}">{{ task.taskid }}</a>
+        <a href="/task/{{task.uid}}">{{ task.uid }}</a>
       </td>
       <td>
-        {% if task.data['priority'] != 'normal' %}
-        <span class="badge badge-dark">{{task.data['priority']}}</span>
+        {% if task.priority != 'normal' %}
+        <span class="badge badge-dark">{{task.priority}}</span>
         {% endif %}
-        <span class="badge badge-light">{{task.data['status']}}</span>
-        {% for hdrname, hdrval in task.data['headers'].items() %}
+        <span class="badge badge-light">{{task.status}}</span>
+        {% for hdrname, hdrval in task.headers.items() %}
         {% if hdrname == 'type' %}
         <span class="badge badge-primary">{{hdrname}}:{{hdrval}}</span>
         {% elif hdrname == 'kind' %}
