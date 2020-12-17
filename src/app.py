@@ -32,7 +32,7 @@ class TaskView:
     layer of indirection.
     """
 
-    def __init__(self, task: Task):
+    def __init__(self, task: Task) -> None:
         self._task = task
 
     @property
