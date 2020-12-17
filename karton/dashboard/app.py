@@ -103,7 +103,7 @@ def get_xrefs(root_uid) -> List[Tuple[str, str]]:
         return []
     xrefs = json.loads(config.get("dashboard", "xrefs"))
     return sorted((
-        (label, url_template.replace("{root_uid}", root_uid))
+        (label, url_template.format(root_uid=root_uid))
         for label, url_template in xrefs.items()),
         key=itemgetter(0)
     )
