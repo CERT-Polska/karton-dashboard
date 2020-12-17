@@ -44,7 +44,7 @@ class TaskView:
         return self._task.uid
 
     @property
-    def parent_uid(self) -> str:
+    def parent_uid(self) -> Optoinal[str]:
         return self._task.parent_uid
 
     @property
