@@ -14,22 +14,22 @@
       </tr>
     </thead>
     <tbody>
-      {% for queue in queues %}
+      {% for (queue_name, queue) in queues.items() %}
       <tr>
         <td>
-          <a href="queue/{{ queue.name }}">{{ queue.name }}</a>
+          <a href="queue/{{ queue_name }}">{{ queue_name }}</a>
           <div>
-            <span class="badge badge-info">{{ queue.version }}</span>
-            {% if not queue.persistent %}
+            <span class="badge badge-info">{{ queue.bind.version }}</span>
+            {% if not queue.bind.persistent %}
                 <span class="badge badge-danger">non-persistent</span>
             {% endif %}
-            {% if not queue.description %}
+            {% if not queue.bind.info %}
                 <span class="badge badge-danger">undocumented</span>
             {% endif %}
           </div>
         </td>
         <td>
-          {% for filter in queue.binds %}
+          {% for filter in queue.bind.filters %}
           <div>
             {% for filtername, filterval in filter.items() %}
             {% if filtername == 'type' %}
@@ -46,7 +46,7 @@
           {% endfor %}
         </td>
         <td>
-          {% set length = queue.tasks | length %}
+          {% set length = queue.pending_tasks | length %}
           {% if length == 0 %}
           <span class="badge badge-success">{{length}}</span>
           {% elif length < 25 %}
@@ -56,24 +56,23 @@
           {% endif %}
         </td>
         <td>
-          {% set length = queue.crashed | length %}
-          {% set url = url_for("get_crashed_queue", queue_name=queue.name) %}
+          {% set length = queue.crashed_tasks | length %}
+          {% set url = url_for("get_crashed_queue", queue_name=queue_name) %}
           {% set badgeClass = "badge-success" if length == 0 else "badge-danger" %}
           <span class="badge {{badgeClass}}">
               <a href={{url}} style="color: inherit">{{length}}</a>
           </span>
         </td>
         <td>
-          {% if queue.replicas == 0 %}
-          <span class="badge badge-danger">{{queue.replicas}}</span>
+          {% if queue.online_consumers_count == 0 %}
+          <span class="badge badge-danger">{{queue.online_consumers_count}}</span>
           {% else %}
-          <span class="badge badge-success">{{queue.replicas}}</span>
+          <span class="badge badge-success">{{queue.online_consumers_count}}</span>
           {% endif %}
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-  <p>Log queue length: {{ log_len }}</p>
 </div>
 {% endblock %}

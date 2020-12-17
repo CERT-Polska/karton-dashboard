@@ -1,17 +1,17 @@
 import logging
-import json
 import textwrap
 import re
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 from flask import abort, Flask, render_template, send_from_directory, \
     jsonify, request, redirect  # type: ignore
 from karton.core.base import KartonBase  # type: ignore
 from karton.core.task import TaskState  # type: ignore
 from karton.core import Producer  # type: ignore
-from karton.core.task import Task as KartonTask  # type: ignore
+from karton.core.inspect import KartonState # type: ignore
+from karton.core.task import Task # type: ignore
 from mworks import CommonRoutes  # type: ignore
 from prometheus_client import Gauge, generate_latest  # type: ignore
 from collections import defaultdict
@@ -25,155 +25,50 @@ logging.basicConfig(level=logging.INFO)
 
 karton = KartonBase(identity="karton.dashboard")
 
-Filters = Dict[str, str]
-Registration = Union[List[Filters], Dict[str, Any]]
 
+class TaskView:
+    """
+    All problems in computer science can be solved by another 
+    layer of indirection.
+    """
 
-class Queue:
-    def __init__(self, name: str, registration: Registration) -> None:
-        self.name: str = name
-        self.tasks: List[Task] = []
-        self.crashed: List[Task] = []
-        if isinstance(registration, list):
-            # v2.2.0 compatibility
-            self.binds: List[Filters] = registration
-            self.raw_description: Optional[str] = None
-            self.persistent: bool = not name.endswith(".test")
-            self.version: str = "2.x.x"
-        else:
-            self.binds = registration["filters"]
-            self.raw_description = registration["info"]
-            self.persistent = registration["persistent"]
-            self.version = registration["version"]
-        self.description: Optional[str] = render_description(
-            self.raw_description
-        )
-        self.replicas: int = 0
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "identity": self.name,
-            "filters": self.binds,
-            "description": self.raw_description,
-            "persistent": self.persistent,
-            "version": self.version,
-            "replicas": self.replicas,
-            "tasks": [task.taskid for task in self.tasks],
-            "crashed": [task.taskid for task in self.crashed]
-        }
-
-
-class Task:
-    def __init__(self, data: Dict[str, Any]) -> None:
-        self.taskid: str = data["uid"]
-        self.data: Dict[str, Any] = data
-
-    def prettyprint(self) -> str:
-        return json.dumps(self.data, indent=4)
+    def __init__(self, task: Task) -> None:
+        self._task = task
 
     @property
-    def error(self) -> str:
-        return self.data["error"]
+    def headers(self) -> Dict[str, Any]:
+        return self._task.headers
 
     @property
-    def status(self) -> str:
-        return self.data["status"]
+    def uid(self) -> str:
+        return self._task.uid
+
+    @property
+    def parent_uid(self) -> Optional[str]:
+        return self._task.parent_uid
+
+    @property
+    def root_uid(self) -> str:
+        return self._task.root_uid
 
     @property
     def priority(self) -> str:
-        return self.data["priority"]
+        return self._task.priority
 
+    @property
+    def status(self) -> str:
+        return self._task.status
+
+    @property
     def last_update(self) -> datetime:
-        return datetime.fromtimestamp(self.data["last_update"])
+        return datetime.fromtimestamp(self._task.last_update)
 
+    @property
     def last_update_delta(self) -> str:
-        return pretty_delta(self.last_update())
+        return pretty_delta(self.last_update)
 
-    def to_dict(self) -> Dict[str, Any]:
-        return self.data
-
-
-class Analysis:
-    def __init__(self, uid: str) -> None:
-        self.rootid: str = uid
-        self.queues: Dict[str, List[Task]] = {}
-
-    def add_task(self, identity: str, taskdata: Dict[str, Any]):
-        if identity not in self.queues:
-            self.queues[identity] = []
-        self.queues[identity].append(Task(taskdata))
-
-    def last_update(self) -> datetime:
-        return max([task.last_update()
-                    for queue, tasks in self.queues.items()
-                    for task in tasks])
-
-    def last_update_delta(self) -> str:
-        return pretty_delta(self.last_update())
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "uid": self.rootid,
-            "queues": {identity: [task.to_dict() for task in queue]
-                       for identity, queue in self.queues.items()},
-            "last_update": self.last_update().timestamp()
-        }
-
-
-class KartonState:
-    def __init__(self):
-        # Log queue length
-        self.log_queue_len = karton.rs.llen("karton.logs")
-
-        # Queues
-        binds = karton.rs.hgetall("karton.binds")
-        queues: Dict[str, Queue] = {k: Queue(k, json.loads(v))
-                                    for k, v in sorted(binds.items())}
-        # Analyses (aka root tasks)
-        analyses: Dict[str, Analysis] = {}
-
-        # Filter tasks and add them to queues
-        keys = karton.rs.keys("karton.task:*")
-        for task in karton.rs.mget(keys):
-            if task is None:
-                # Harmless race condition, task removed in the meantime.
-                continue
-
-            taskdata = json.loads(task)
-            if "receiver" not in taskdata["headers"]:
-                # Task without a receiver. Weid flex, but ok.
-                continue
-
-            if taskdata["status"] == TaskState.FINISHED:
-                # Don't count finished tasks (waiting for GC).
-                continue
-
-            queue_name = taskdata["headers"]["receiver"]
-            if queue_name not in queues:
-                # Queue removed but task is still in redis (waiting for GC).
-                continue
-
-            root_uid = taskdata["root_uid"]
-            if root_uid not in analyses:
-                analyses[root_uid] = Analysis(root_uid)
-
-            analyses[root_uid].add_task(queue_name, taskdata)
-
-            if taskdata["status"] == TaskState.CRASHED:
-                queues[queue_name].crashed.append(Task(taskdata))
-            else:
-                queues[queue_name].tasks.append(Task(taskdata))
-
-        # Count replicas
-        for client in karton.rs.client_list():
-            queue_name = client["name"]
-            if queue_name not in queues:
-                continue
-
-            queues[queue_name].replicas += 1
-
-        self.queues = queues
-        self.analyses = analyses
+    def to_json(self, indent=None) -> str:
+        return self._task.serialize(indent=indent)
 
 
 def pretty_delta(dt: datetime) -> str:
@@ -188,6 +83,7 @@ def pretty_delta(dt: datetime) -> str:
     return f"{hours_diff} hours ago"
 
 
+@app.template_filter('render_description')
 def render_description(description) -> Optional[str]:
     if not description:
         return None
@@ -207,7 +103,7 @@ karton_replicas = Gauge("karton_replicas", "Replicas", ("name", "version"))
 def varz():
     """ Update and get prometheus metrics """
 
-    state = KartonState()
+    state = KartonState(karton.backend)
     for _key, gauge in karton_tasks._metrics.items():
         gauge.set(0)
 
@@ -221,8 +117,6 @@ def varz():
             karton_tasks.labels(name, priority, status).set(count)
         karton_replicas.labels(safe_name, queue.version).set(queue.replicas)
 
-    karton_logs.set(state.log_queue_len)
-
     return generate_latest()
 
 
@@ -233,15 +127,15 @@ def static(path: str):
 
 @app.route("/", methods=["GET"])
 def get_queues():
-    state = KartonState()
+    state = KartonState(karton.backend)
     return render_template(
-        "index.html", queues=state.queues.values(), log_len=state.log_queue_len
+        "index.html", queues=state.queues
     )
 
 
 @app.route("/api/queues", methods=["GET"])
 def get_queues_api():
-    state = KartonState()
+    state = KartonState(karton.backend)
     return jsonify({identity: queue.to_dict()
                     for identity, queue in state.queues.items()})
 
@@ -250,22 +144,21 @@ def get_queues_api():
 def restart_task(task_id):
     producer = Producer(identity="karton.dashboard-retry")
 
-    taskdata = karton.rs.get(f"karton.task:{task_id}")
-    if not taskdata:
+    task = karton.backend.get_task(task_id)
+    if not task:
         return jsonify({
             "error": "Task doesn't exist"
         }), 404
-    task = KartonTask.unserialize(taskdata)
     forked = task.fork_task()
     # spawn a new task and mark the original one as finished
     producer.send_task(forked)
-    producer.declare_task_state(task=task, status=TaskState.FINISHED)
+    karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
     return redirect(request.referrer)
 
 
 @app.route("/queue/<queue_name>", methods=["GET"])
 def get_queue(queue_name):
-    state = KartonState()
+    state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
     if not queue:
         abort(404)
@@ -274,7 +167,7 @@ def get_queue(queue_name):
 
 @app.route("/queue/<queue_name>/crashed", methods=["GET"])
 def get_crashed_queue(queue_name):
-    state = KartonState()
+    state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
     if not queue:
         abort(404)
@@ -283,7 +176,7 @@ def get_crashed_queue(queue_name):
 
 @app.route("/api/queue/<queue_name>", methods=["GET"])
 def get_queue_api(queue_name):
-    state = KartonState()
+    state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
     if not queue:
         return jsonify({
@@ -294,27 +187,25 @@ def get_queue_api(queue_name):
 
 @app.route("/task/<task_id>", methods=["GET"])
 def get_task(task_id):
-    task = karton.rs.get(f"karton.task:{task_id}")
+    task = karton.backend.get_task(task_id)
     if not task:
         abort(404)
-    taskdata = Task(json.loads(task))
-    return render_template("task.html", task=taskdata,)
+    return render_template("task.html", task=TaskView(task))
 
 
 @app.route("/api/task/<task_id>", methods=["GET"])
 def get_task_api(task_id):
-    task = karton.rs.get(f"karton.task:{task_id}")
+    task = karton.backend.get_task(task_id)
     if not task:
         return jsonify({
             "error": "Task doesn't exist"
         }), 404
-    taskdata = Task(json.loads(task))
-    return jsonify(taskdata.to_dict())
+    return jsonify(task.to_dict())
 
 
 @app.route("/analysis/<root_id>", methods=["GET"])
 def get_analysis(root_id):
-    state = KartonState()
+    state = KartonState(karton.backend)
     analysis = state.analyses.get(root_id)
     if not analysis:
         abort(404)
@@ -323,7 +214,7 @@ def get_analysis(root_id):
 
 @app.route("/api/analysis/<root_id>", methods=["GET"])
 def get_analysis_api(root_id):
-    state = KartonState()
+    state = KartonState(karton.backend)
     analysis = state.analyses.get(root_id)
     if not analysis:
         return jsonify({
