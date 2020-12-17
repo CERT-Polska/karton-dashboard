@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 import textwrap
 import re
 
@@ -19,7 +20,11 @@ from collections import defaultdict
 import mistune  # type: ignore
 
 
-app = Flask(__name__, static_folder=None)
+app_path = Path(__file__).parent
+static_folder = app_path / "static"
+app = Flask(__name__,
+            static_folder=None,
+            template_folder=app_path / "templates")
 mworks = CommonRoutes(app)
 logging.basicConfig(level=logging.INFO)
 
@@ -122,7 +127,7 @@ def varz():
 
 @app.route("/static/<path:path>", methods=["GET"])
 def static(path: str):
-    return send_from_directory("static", path)
+    return send_from_directory(static_folder, path)
 
 
 @app.route("/", methods=["GET"])
