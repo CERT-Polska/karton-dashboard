@@ -1,6 +1,6 @@
-# Karton dashboard
+# Karton Dashboard
 
-Dashboard for our karton pipeline.
+A small Flask application that allows for Karton task and queue introspection.
 
 
 ## Info

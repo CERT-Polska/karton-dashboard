@@ -1,9 +1,12 @@
+import json
 import logging
-import textwrap
+from operator import itemgetter
+from pathlib import Path
 import re
+import textwrap
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Tuple, Optional
 
 from flask import abort, Flask, render_template, send_from_directory, \
     jsonify, request, redirect  # type: ignore
@@ -19,7 +22,11 @@ from collections import defaultdict
 import mistune  # type: ignore
 
 
-app = Flask(__name__, static_folder=None)
+app_path = Path(__file__).parent
+static_folder = app_path / "static"
+app = Flask(__name__,
+            static_folder=None,
+            template_folder=app_path / "templates")
 mworks = CommonRoutes(app)
 logging.basicConfig(level=logging.INFO)
 
@@ -90,6 +97,18 @@ def render_description(description) -> Optional[str]:
     return mistune.markdown(textwrap.dedent(description))
 
 
+def get_xrefs(root_uid) -> List[Tuple[str, str]]:
+    config = karton.config.config
+    if not config.has_option("dashboard", "xrefs"):
+        return []
+    xrefs = json.loads(config.get("dashboard", "xrefs"))
+    return sorted((
+        (label, url_template.format(root_uid=root_uid))
+        for label, url_template in xrefs.items()),
+        key=itemgetter(0)
+    )
+
+
 karton_logs = Gauge("karton_logs", "Pending logs")
 karton_tasks = Gauge(
     "karton_tasks",
@@ -122,7 +141,7 @@ def varz():
 
 @app.route("/static/<path:path>", methods=["GET"])
 def static(path: str):
-    return send_from_directory("static", path)
+    return send_from_directory(static_folder, path)
 
 
 @app.route("/", methods=["GET"])
@@ -190,7 +209,11 @@ def get_task(task_id):
     task = karton.backend.get_task(task_id)
     if not task:
         abort(404)
-    return render_template("task.html", task=TaskView(task))
+    return render_template(
+        "task.html",
+        task=TaskView(task),
+        xrefs=get_xrefs(task.root_uid)
+    )
 
 
 @app.route("/api/task/<task_id>", methods=["GET"])
@@ -209,7 +232,11 @@ def get_analysis(root_id):
     analysis = state.analyses.get(root_id)
     if not analysis:
         abort(404)
-    return render_template("analysis.html", analysis=analysis)
+    return render_template(
+        "analysis.html",
+        analysis=analysis,
+        xrefs=get_xrefs(analysis.root_uid)
+    )
 
 
 @app.route("/api/analysis/<root_id>", methods=["GET"])
