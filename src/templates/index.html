@@ -46,7 +46,7 @@
           {% endfor %}
         </td>
         <td>
-          {% set length = queue.tasks | length %}
+          {% set length = queue.pending_tasks | length %}
           {% if length == 0 %}
           <span class="badge badge-success">{{length}}</span>
           {% elif length < 25 %}
