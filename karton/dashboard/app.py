@@ -1,10 +1,12 @@
+import json
 import logging
+from operator import itemgetter
 from pathlib import Path
-import textwrap
 import re
+import textwrap
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Tuple, Optional
 
 from flask import abort, Flask, render_template, send_from_directory, \
     jsonify, request, redirect  # type: ignore
@@ -93,6 +95,18 @@ def render_description(description) -> Optional[str]:
     if not description:
         return None
     return mistune.markdown(textwrap.dedent(description))
+
+
+def get_xrefs(root_uid) -> List[Tuple[str, str]]:
+    config = karton.config.config
+    if not config.has_option("dashboard", "xrefs"):
+        return []
+    xrefs = json.loads(config.get("dashboard", "xrefs"))
+    return sorted((
+        (label, url_template.replace("{root_uid}", root_uid))
+        for label, url_template in xrefs.items()),
+        key=itemgetter(0)
+    )
 
 
 karton_logs = Gauge("karton_logs", "Pending logs")
@@ -195,7 +209,11 @@ def get_task(task_id):
     task = karton.backend.get_task(task_id)
     if not task:
         abort(404)
-    return render_template("task.html", task=TaskView(task))
+    return render_template(
+        "task.html",
+        task=TaskView(task),
+        xrefs=get_xrefs(task.root_uid)
+    )
 
 
 @app.route("/api/task/<task_id>", methods=["GET"])
@@ -214,7 +232,11 @@ def get_analysis(root_id):
     analysis = state.analyses.get(root_id)
     if not analysis:
         abort(404)
-    return render_template("analysis.html", analysis=analysis)
+    return render_template(
+        "analysis.html",
+        analysis=analysis,
+        xrefs=get_xrefs(analysis.root_uid)
+    )
 
 
 @app.route("/api/analysis/<root_id>", methods=["GET"])

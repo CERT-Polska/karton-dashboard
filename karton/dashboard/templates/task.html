@@ -28,6 +28,17 @@
     <dd class="col-9">
       <a href="/queue/{{task.headers['receiver']}}">{{task.headers['receiver']}}</a>
     </dd>
+    <dt class="col-3">Xrefs</dt>
+    <dd class="col-9">
+      <div class="btn-group btn-group-toggle" data-toggle="buttons">
+        {% for label, link in xrefs %}
+        <a href="{{link}}"
+          class="btn btn-sm btn-secondary">
+          {{label}}
+        </a>
+        {% endfor %}
+      </div>
+    </dd>
     <dt class="col-3">Headers</dt>
     <dd class="col-9">
       {% for hdrname, hdrval in task.headers.items() %}

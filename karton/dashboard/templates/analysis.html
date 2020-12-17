@@ -2,6 +2,19 @@
 {% block content %}
 <div class="bs-component" style="padding-top: 100px">
   <h3 class="text-center">analysis {{ analysis.rootid }}</h3>
+  <dl class="row">
+    <dt class="col-3">Xrefs</dt>
+    <dd class="col-9">
+      <div class="btn-group btn-group-toggle" data-toggle="buttons">
+        {% for label, link in xrefs %}
+        <a href="{{link}}"
+          class="btn btn-sm btn-secondary">
+          {{label}}
+        </a>
+        {% endfor %}
+      </div>
+    </dd>
+  </dl>
   <h4>Tasks</h4>
   <table class="table table-hover">
     <thead>
