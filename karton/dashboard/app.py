@@ -1,32 +1,34 @@
 import json
 import logging
-from operator import itemgetter
-from pathlib import Path
 import re
 import textwrap
-
-from datetime import datetime
-from typing import Any, Dict, List, Tuple, Optional
-
-from flask import abort, Flask, render_template, send_from_directory, \
-    jsonify, request, redirect  # type: ignore
-from karton.core.base import KartonBase  # type: ignore
-from karton.core.task import TaskState  # type: ignore
-from karton.core import Producer  # type: ignore
-from karton.core.inspect import KartonState # type: ignore
-from karton.core.task import Task # type: ignore
-from mworks import CommonRoutes  # type: ignore
-from prometheus_client import Gauge, generate_latest  # type: ignore
 from collections import defaultdict
+from datetime import datetime
+from operator import itemgetter
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 import mistune  # type: ignore
-
+from flask import (  # type: ignore
+    Flask,
+    abort,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+)
+from karton.core import Producer  # type: ignore
+from karton.core.base import KartonBase  # type: ignore
+from karton.core.inspect import KartonState  # type: ignore
+from karton.core.task import Task  # type: ignore
+from karton.core.task import TaskState  # type: ignore
+from mworks import CommonRoutes  # type: ignore
+from prometheus_client import Gauge, generate_latest  # type: ignore
 
 app_path = Path(__file__).parent
 static_folder = app_path / "static"
-app = Flask(__name__,
-            static_folder=None,
-            template_folder=app_path / "templates")
+app = Flask(__name__, static_folder=None, template_folder=str(app_path / "templates"))
 mworks = CommonRoutes(app)
 logging.basicConfig(level=logging.INFO)
 
@@ -35,7 +37,7 @@ karton = KartonBase(identity="karton.dashboard")
 
 class TaskView:
     """
-    All problems in computer science can be solved by another 
+    All problems in computer science can be solved by another
     layer of indirection.
     """
 
@@ -90,7 +92,7 @@ def pretty_delta(dt: datetime) -> str:
     return f"{hours_diff} hours ago"
 
 
-@app.template_filter('render_description')
+@app.template_filter("render_description")
 def render_description(description) -> Optional[str]:
     if not description:
         return None
@@ -102,19 +104,17 @@ def get_xrefs(root_uid) -> List[Tuple[str, str]]:
     if not config.has_option("dashboard", "xrefs"):
         return []
     xrefs = json.loads(config.get("dashboard", "xrefs"))
-    return sorted((
-        (label, url_template.format(root_uid=root_uid))
-        for label, url_template in xrefs.items()),
-        key=itemgetter(0)
+    return sorted(
+        (
+            (label, url_template.format(root_uid=root_uid))
+            for label, url_template in xrefs.items()
+        ),
+        key=itemgetter(0),
     )
 
 
 karton_logs = Gauge("karton_logs", "Pending logs")
-karton_tasks = Gauge(
-    "karton_tasks",
-    "Pending tasks",
-    ("name", "priority", "status")
-)
+karton_tasks = Gauge("karton_tasks", "Pending tasks", ("name", "priority", "status"))
 karton_replicas = Gauge("karton_replicas", "Replicas", ("name", "version"))
 
 
@@ -147,16 +147,15 @@ def static(path: str):
 @app.route("/", methods=["GET"])
 def get_queues():
     state = KartonState(karton.backend)
-    return render_template(
-        "index.html", queues=state.queues
-    )
+    return render_template("index.html", queues=state.queues)
 
 
 @app.route("/api/queues", methods=["GET"])
 def get_queues_api():
     state = KartonState(karton.backend)
-    return jsonify({identity: queue.to_dict()
-                    for identity, queue in state.queues.items()})
+    return jsonify(
+        {identity: queue.to_dict() for identity, queue in state.queues.items()}
+    )
 
 
 @app.route("/restart_task/<task_id>/restart", methods=["POST"])
@@ -165,9 +164,7 @@ def restart_task(task_id):
 
     task = karton.backend.get_task(task_id)
     if not task:
-        return jsonify({
-            "error": "Task doesn't exist"
-        }), 404
+        return jsonify({"error": "Task doesn't exist"}), 404
     forked = task.fork_task()
     # spawn a new task and mark the original one as finished
     producer.send_task(forked)
@@ -198,9 +195,7 @@ def get_queue_api(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
     if not queue:
-        return jsonify({
-            "error": "Queue doesn't exist"
-        }), 404
+        return jsonify({"error": "Queue doesn't exist"}), 404
     return jsonify(queue.to_dict())
 
 
@@ -210,9 +205,7 @@ def get_task(task_id):
     if not task:
         abort(404)
     return render_template(
-        "task.html",
-        task=TaskView(task),
-        xrefs=get_xrefs(task.root_uid)
+        "task.html", task=TaskView(task), xrefs=get_xrefs(task.root_uid)
     )
 
 
@@ -220,9 +213,7 @@ def get_task(task_id):
 def get_task_api(task_id):
     task = karton.backend.get_task(task_id)
     if not task:
-        return jsonify({
-            "error": "Task doesn't exist"
-        }), 404
+        return jsonify({"error": "Task doesn't exist"}), 404
     return jsonify(task.to_dict())
 
 
@@ -233,9 +224,7 @@ def get_analysis(root_id):
     if not analysis:
         abort(404)
     return render_template(
-        "analysis.html",
-        analysis=analysis,
-        xrefs=get_xrefs(analysis.root_uid)
+        "analysis.html", analysis=analysis, xrefs=get_xrefs(analysis.root_uid)
     )
 
 
@@ -244,7 +233,5 @@ def get_analysis_api(root_id):
     state = KartonState(karton.backend)
     analysis = state.analyses.get(root_id)
     if not analysis:
-        return jsonify({
-            "error": "Analysis doesn't exist"
-        }), 404
+        return jsonify({"error": "Analysis doesn't exist"}), 404
     return jsonify(analysis.to_dict())
