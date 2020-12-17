@@ -9,7 +9,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for task in queue.tasks %}
+    {% for task in queue.pending_tasks %}
     <tr>
       <td>
         <a href="/task/{{task.uid}}">{{ task.uid }}</a>
