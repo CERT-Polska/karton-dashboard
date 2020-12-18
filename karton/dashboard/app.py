@@ -161,14 +161,15 @@ def varz():
         gauge.set(0)
 
     for queue in state.queues.values():
-        safe_name = re.sub("[^a-z0-9]", "_", queue.name.lower())
+        safe_name = re.sub("[^a-z0-9]", "_", queue.bind.identity.lower())
         task_infos = defaultdict(int)
         for task in queue.tasks:
             task_infos[(safe_name, task.priority, task.status)] += 1
 
         for (name, priority, status), count in task_infos.items():
-            karton_tasks.labels(name, priority, status).set(count)
-        karton_replicas.labels(safe_name, queue.version).set(queue.replicas)
+            karton_tasks.labels(name, priority.value, status.value).set(count)
+        replicas = len(state.replicas[queue.bind.identity])
+        karton_replicas.labels(safe_name, queue.bind.version).set(replicas)
 
     return generate_latest()
 
