@@ -7,4 +7,4 @@ RUN pip install -r requirements.txt
 COPY ./karton ./karton
 COPY ./setup.py ./setup.py
 RUN pip install .
-CMD karton-dashboard run
+CMD karton-dashboard run --host 0.0.0.0
