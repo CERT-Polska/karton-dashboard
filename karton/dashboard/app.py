@@ -26,11 +26,12 @@ from karton.core.task import TaskState  # type: ignore
 from mworks import CommonRoutes  # type: ignore
 from prometheus_client import Gauge, generate_latest  # type: ignore
 
+logging.basicConfig(level=logging.INFO)
+
 app_path = Path(__file__).parent
 static_folder = app_path / "static"
 app = Flask(__name__, static_folder=None, template_folder=str(app_path / "templates"))
 mworks = CommonRoutes(app)
-logging.basicConfig(level=logging.INFO)
 
 karton = KartonBase(identity="karton.dashboard")
 
