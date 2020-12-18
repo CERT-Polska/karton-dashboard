@@ -20,9 +20,8 @@ from flask import (  # type: ignore
 )
 from karton.core import Producer  # type: ignore
 from karton.core.base import KartonBase  # type: ignore
-from karton.core.inspect import KartonState  # type: ignore
-from karton.core.task import Task  # type: ignore
-from karton.core.task import TaskState  # type: ignore
+from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState  # type: ignore
+from karton.core.task import Task, TaskState  # type: ignore
 from mworks import CommonRoutes  # type: ignore
 from prometheus_client import Gauge, generate_latest  # type: ignore
 
@@ -77,8 +76,42 @@ class TaskView:
     def last_update_delta(self) -> str:
         return pretty_delta(self.last_update)
 
+    def to_dict(self) -> Dict[str, Any]:
+        return json.loads(self._task.serialize())
+
     def to_json(self, indent=None) -> str:
         return self._task.serialize(indent=indent)
+
+
+class QueueView:
+    def __init__(self, queue: KartonQueue) -> None:
+        self._queue = queue
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "identity": self._queue.bind.identity,
+            "filters": self._queue.bind.filters,
+            "description": self._queue.bind.info,
+            "persistent": self._queue.bind.persistent,
+            "version": self._queue.bind.version,
+            "replicas": self._queue.online_consumers_count,
+            "tasks": [task.uid for task in self._queue.pending_tasks],
+            "crashed": [task.uid for task in self._queue.crashed_tasks],
+        }
+
+
+class AnalysisView:
+    def __init__(self, analysis: KartonAnalysis) -> None:
+        self._analysis = analysis
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "uid": self._analysis.root_uid,
+            "queues": {
+                queue_name: [TaskView(task).to_dict() for task in queue.pending_tasks]
+                for queue_name, queue in self._analysis.pending_queues.items()
+            },
+        }
 
 
 def pretty_delta(dt: datetime) -> str:
@@ -155,7 +188,10 @@ def get_queues():
 def get_queues_api():
     state = KartonState(karton.backend)
     return jsonify(
-        {identity: queue.to_dict() for identity, queue in state.queues.items()}
+        {
+            identity: QueueView(queue).to_dict()
+            for identity, queue in state.queues.items()
+        }
     )
 
 
@@ -197,7 +233,7 @@ def get_queue_api(queue_name):
     queue = state.queues.get(queue_name)
     if not queue:
         return jsonify({"error": "Queue doesn't exist"}), 404
-    return jsonify(queue.to_dict())
+    return jsonify(QueueView(queue).to_dict())
 
 
 @app.route("/task/<task_id>", methods=["GET"])
@@ -215,7 +251,7 @@ def get_task_api(task_id):
     task = karton.backend.get_task(task_id)
     if not task:
         return jsonify({"error": "Task doesn't exist"}), 404
-    return jsonify(task.to_dict())
+    return jsonify(TaskView(task).to_dict())
 
 
 @app.route("/analysis/<root_id>", methods=["GET"])
@@ -235,4 +271,4 @@ def get_analysis_api(root_id):
     analysis = state.analyses.get(root_id)
     if not analysis:
         return jsonify({"error": "Analysis doesn't exist"}), 404
-    return jsonify(analysis.to_dict())
+    return jsonify(AnalysisView(analysis).to_dict())
