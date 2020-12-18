@@ -134,7 +134,7 @@ def varz():
             task_infos[(safe_name, task.priority, task.status)] += 1
 
         for (name, priority, status), count in task_infos.items():
-            karton_tasks.labels(name, priority.value, status).set(count)
+            karton_tasks.labels(name, priority.value, status.value).set(count)
         replicas = len(state.replicas[queue.bind.identity])
         karton_replicas.labels(safe_name, queue.bind.version).set(replicas)
 
