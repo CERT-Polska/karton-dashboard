@@ -18,9 +18,9 @@
       </td>
       <td>
         {% if task.priority != 'normal' %}
-        <span class="badge badge-dark">{{task.priority}}</span>
+        <span class="badge badge-dark">{{task.priority.value}}</span>
         {% endif %}
-        <span class="badge badge-light">{{task.status}}</span>
+        <span class="badge badge-light">{{task.status.value}}</span>
         {% for hdrname, hdrval in task.headers.items() %}
         {% if hdrname == 'type' %}
         <span class="badge badge-primary">{{hdrname}}:{{hdrval}}</span>
