@@ -1,13 +1,9 @@
 # Karton Dashboard
 
+![](img/dashboard.png)
+
 A small Flask application that allows for Karton task and queue introspection.
 
+Author: CERT.pl
 
-## Info
-
-**Url**: [https://karton.cert.pl](https://karton.cert.pl)
-
-**Serwer**: `karton-node.cert.pl`, grupa `karton-prod`
-
-**Osoby kontaktowe**: msm
-
+Maintainers: msm
