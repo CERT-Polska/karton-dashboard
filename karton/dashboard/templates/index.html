@@ -14,7 +14,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for (queue_name, queue) in queues.items() %}
+      {% for (queue_name, queue) in queues|dictsort %}
       <tr>
         <td>
           <a href="queue/{{ queue_name }}">{{ queue_name }}</a>
