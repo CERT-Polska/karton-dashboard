@@ -22,7 +22,6 @@ from karton.core import Producer
 from karton.core.base import KartonBase
 from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
 from karton.core.task import Task, TaskPriority, TaskState
-from mworks import CommonRoutes  # type: ignore
 from prometheus_client import Gauge, generate_latest  # type: ignore
 
 logging.basicConfig(level=logging.INFO)
@@ -30,7 +29,6 @@ logging.basicConfig(level=logging.INFO)
 app_path = Path(__file__).parent
 static_folder = app_path / "static"
 app = Flask(__name__, static_folder=None, template_folder=str(app_path / "templates"))
-mworks = CommonRoutes(app)
 
 karton = KartonBase(identity="karton.dashboard")
 
