@@ -19,11 +19,11 @@
         <td>
           <a href="queue/{{ queue_name }}">{{ queue_name }}</a>
           <div>
-            <span class="badge badge-info">
-              📦{{ queue.bind.version }}
+            <span class="badge badge-info" title="karton-core library version">
+              📦v{{ queue.bind.version }}
             </span>
             {% if queue.bind.service_version %}
-              <span class="badge badge-secondary">
+              <span class="badge badge-secondary" title="service package version">
                 v{{ queue.bind.service_version }}
               </span>
             {% endif %}
