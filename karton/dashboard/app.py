@@ -98,6 +98,7 @@ class QueueView:
             "persistent": self._queue.bind.persistent,
             "version": self._queue.bind.version,
             "replicas": self._queue.online_consumers_count,
+            "service_version": self._queue.bind.service_version,
             "tasks": sorted(tasks, key=lambda t: t.last_update, reverse=True),
             "crashed": sorted(crashed, key=lambda t: t.last_update, reverse=True),
         }
