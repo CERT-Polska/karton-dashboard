@@ -18,10 +18,10 @@ from flask import (  # type: ignore
     request,
     send_from_directory,
 )
-from karton.core import Producer  # type: ignore
-from karton.core.base import KartonBase  # type: ignore
-from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState  # type: ignore
-from karton.core.task import Task, TaskState  # type: ignore
+from karton.core import Producer
+from karton.core.base import KartonBase
+from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
+from karton.core.task import Task, TaskPriority, TaskState
 from mworks import CommonRoutes  # type: ignore
 from prometheus_client import Gauge, generate_latest  # type: ignore
 
@@ -61,11 +61,11 @@ class TaskView:
         return self._task.root_uid
 
     @property
-    def priority(self) -> str:
+    def priority(self) -> TaskPriority:
         return self._task.priority
 
     @property
-    def status(self) -> str:
+    def status(self) -> TaskState:
         return self._task.status
 
     @property
@@ -88,6 +88,9 @@ class QueueView:
         self._queue = queue
 
     def to_dict(self) -> Dict[str, Any]:
+        tasks = [task.uid for task in self._queue.pending_tasks]
+        crashed = [task.uid for task in self._queue.crashed_tasks]
+
         return {
             "identity": self._queue.bind.identity,
             "filters": self._queue.bind.filters,
@@ -95,8 +98,8 @@ class QueueView:
             "persistent": self._queue.bind.persistent,
             "version": self._queue.bind.version,
             "replicas": self._queue.online_consumers_count,
-            "tasks": [task.uid for task in self._queue.pending_tasks],
-            "crashed": [task.uid for task in self._queue.crashed_tasks],
+            "tasks": sorted(tasks, key=lambda t: t.last_update, reverse=True),
+            "crashed": sorted(crashed, key=lambda t: t.last_update, reverse=True),
         }
 
 
