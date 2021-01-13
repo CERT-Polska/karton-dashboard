@@ -29,9 +29,13 @@
           </div>
       {% endfor %}
     </dd>
-    <dt class="col-3">Library version</dt>
+    <dt class="col-3">Karton-core library version</dt>
     <dd class="col-9">
       <span class="badge badge-info">{{ queue.bind.version }}</span>
+    </dd>
+    <dt class="col-3">Service version</dt>
+    <dd class="col-9">
+      <span class="badge badge-secondary">{{ queue.bind.service_version or 'unknown' }}</span>
     </dd>
     <dt class="col-3">Queue persistence</dt>
     <dd class="col-9">
