@@ -86,8 +86,8 @@ class QueueView:
         self._queue = queue
 
     def to_dict(self) -> Dict[str, Any]:
-        tasks = [task.uid for task in self._queue.pending_tasks]
-        crashed = [task.uid for task in self._queue.crashed_tasks]
+        tasks = sorted(self._queue.pending_tasks, key=lambda t: t.last_update, reverse=True)
+        crashed = sorted(self._queue.crashed_tasks, key=lambda t: t.last_update, reverse=True)
 
         return {
             "identity": self._queue.bind.identity,
@@ -97,8 +97,8 @@ class QueueView:
             "version": self._queue.bind.version,
             "replicas": self._queue.online_consumers_count,
             "service_version": self._queue.bind.service_version,
-            "tasks": sorted(tasks, key=lambda t: t.last_update, reverse=True),
-            "crashed": sorted(crashed, key=lambda t: t.last_update, reverse=True),
+            "tasks": [task.uid for task in tasks],
+            "crashed": [task.uid for task in crashed],
         }
 
 
