@@ -86,8 +86,12 @@ class QueueView:
         self._queue = queue
 
     def to_dict(self) -> Dict[str, Any]:
-        tasks = sorted(self._queue.pending_tasks, key=lambda t: t.last_update, reverse=True)
-        crashed = sorted(self._queue.crashed_tasks, key=lambda t: t.last_update, reverse=True)
+        tasks = sorted(
+            self._queue.pending_tasks, key=lambda t: t.last_update, reverse=True
+        )
+        crashed = sorted(
+            self._queue.crashed_tasks, key=lambda t: t.last_update, reverse=True
+        )
 
         return {
             "identity": self._queue.bind.identity,
