@@ -17,7 +17,7 @@ Then install karton-dashboard from PyPi:
 ```shell
 $ pip install karton-dashboard
 
-$ karton-dashboard
+$ karton-dashboard run -h 127.0.0.1 -p 5000
 ```
 
 ![Co-financed by the Connecting Europe Facility by of the European Union](https://www.cert.pl/wp-content/uploads/2019/02/en_horizontal_cef_logo-1.png)
