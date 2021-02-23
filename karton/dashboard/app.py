@@ -37,9 +37,8 @@ def restart_tasks(tasks: List[Task]) -> None:
     producer = Producer(identity=identity)
 
     for task in tasks:
-        forked = task.fork_task()
         # spawn a new task and mark the original one as finished
-        producer.send_task(forked)
+        producer.send_task(task.fork_task())
         karton.backend.set_task_status(
             task=task, status=TaskState.FINISHED, consumer=identity
         )
