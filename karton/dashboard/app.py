@@ -221,7 +221,7 @@ def get_queues_api():
     )
 
 
-@app.route("/api/<queue_name>/restart", methods=["POST"])
+@app.route("/<queue_name>/restart", methods=["POST"])
 def restart_queue_tasks(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
@@ -232,7 +232,7 @@ def restart_queue_tasks(queue_name):
     return redirect(request.referrer)
 
 
-@app.route("/api/<queue_name>/cancel", methods=["POST"])
+@app.route("/<queue_name>/cancel", methods=["POST"])
 def cancel_queue_tasks(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
