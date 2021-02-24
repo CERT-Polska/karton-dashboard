@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Optional, Tuple
 import mistune  # type: ignore
 from flask import (  # type: ignore
     Flask,
-    abort,
     jsonify,
     redirect,
     render_template,
@@ -31,6 +30,25 @@ static_folder = app_path / "static"
 app = Flask(__name__, static_folder=None, template_folder=str(app_path / "templates"))
 
 karton = KartonBase(identity="karton.dashboard")
+
+
+def restart_tasks(tasks: List[Task]) -> None:
+    identity = "karton.dashboard-retry"
+    producer = Producer(identity=identity)
+
+    for task in tasks:
+        # spawn a new task and mark the original one as finished
+        producer.send_task(task.fork_task())
+        karton.backend.set_task_status(
+            task=task, status=TaskState.FINISHED, consumer=identity
+        )
+
+
+def cancel_tasks(tasks: List[Task]) -> None:
+    for task in tasks:
+        karton.backend.set_task_status(
+            task=task, status=TaskState.FINISHED, consumer="karton.dashboard-cancel"
+        )
 
 
 class TaskView:
@@ -202,17 +220,45 @@ def get_queues_api():
     )
 
 
+@app.route("/<queue_name>/restart", methods=["POST"])
+def restart_queue_tasks(queue_name):
+    state = KartonState(karton.backend)
+    queue = state.queues.get(queue_name)
+    if not queue:
+        return jsonify({"error": "Queue doesn't exist"}), 404
+
+    restart_tasks(queue.crashed_tasks)
+    return redirect(request.referrer)
+
+
+@app.route("/<queue_name>/cancel", methods=["POST"])
+def cancel_queue_tasks(queue_name):
+    state = KartonState(karton.backend)
+    queue = state.queues.get(queue_name)
+    if not queue:
+        return jsonify({"error": "Queue doesn't exist"}), 404
+
+    cancel_tasks(queue.crashed_tasks)
+    return redirect(request.referrer)
+
+
 @app.route("/restart_task/<task_id>/restart", methods=["POST"])
 def restart_task(task_id):
-    producer = Producer(identity="karton.dashboard-retry")
-
     task = karton.backend.get_task(task_id)
     if not task:
         return jsonify({"error": "Task doesn't exist"}), 404
-    forked = task.fork_task()
-    # spawn a new task and mark the original one as finished
-    producer.send_task(forked)
-    karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
+
+    restart_tasks([task])
+    return redirect(request.referrer)
+
+
+@app.route("/cancel_task/<task_id>/cancel", methods=["POST"])
+def cancel_task(task_id):
+    task = karton.backend.get_task(task_id)
+    if not task:
+        return jsonify({"error": "Task doesn't exist"}), 404
+
+    cancel_tasks([task])
     return redirect(request.referrer)
 
 
@@ -221,7 +267,8 @@ def get_queue(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
     if not queue:
-        abort(404)
+        return jsonify({"error": "Queue doesn't exist"}), 404
+
     return render_template("queue.html", name=queue_name, queue=queue)
 
 
@@ -230,7 +277,8 @@ def get_crashed_queue(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
     if not queue:
-        abort(404)
+        return jsonify({"error": "Queue doesn't exist"}), 404
+
     return render_template("crashed.html", name=queue_name, queue=queue)
 
 
@@ -247,7 +295,8 @@ def get_queue_api(queue_name):
 def get_task(task_id):
     task = karton.backend.get_task(task_id)
     if not task:
-        abort(404)
+        return jsonify({"error": "Task doesn't exist"}), 404
+
     return render_template(
         "task.html", task=TaskView(task), xrefs=get_xrefs(task.root_uid)
     )
@@ -266,7 +315,8 @@ def get_analysis(root_id):
     state = KartonState(karton.backend)
     analysis = state.analyses.get(root_id)
     if not analysis:
-        abort(404)
+        return jsonify({"error": "Analysis doesn't exist"}), 404
+
     return render_template(
         "analysis.html", analysis=analysis, xrefs=get_xrefs(analysis.root_uid)
     )
@@ -278,4 +328,5 @@ def get_analysis_api(root_id):
     analysis = state.analyses.get(root_id)
     if not analysis:
         return jsonify({"error": "Analysis doesn't exist"}), 404
+
     return jsonify(AnalysisView(analysis).to_dict())
