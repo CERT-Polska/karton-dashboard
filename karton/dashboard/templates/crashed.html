@@ -3,7 +3,7 @@
 <h4>
 Crashed tasks
 {% if queue.crashed_tasks %}
-  <div class="btn-group">
+  <div class="btn-group float-right">
     <form action={{url_for("restart_queue_tasks", queue_name=name)}} method="POST" id="restartTask">
       <button class="btn btn-sm btn-secondary mr-1" type="submit" form="restartTask" value="Submit" title="restart all tasks">Restart all</button>
     </form>
