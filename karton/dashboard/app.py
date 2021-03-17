@@ -18,6 +18,7 @@ from flask import (  # type: ignore
     send_from_directory,
 )
 from karton.core import Producer
+from karton.core.backend import KartonMetrics
 from karton.core.base import KartonBase
 from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
 from karton.core.task import Task, TaskPriority, TaskState
@@ -174,6 +175,13 @@ def get_xrefs(root_uid) -> List[Tuple[str, str]]:
 karton_logs = Gauge("karton_logs", "Pending logs")
 karton_tasks = Gauge("karton_tasks", "Pending tasks", ("name", "priority", "status"))
 karton_replicas = Gauge("karton_replicas", "Replicas", ("name", "version"))
+karton_metrics = Gauge("karton_metrics", "Metrics", ("metric", "name"))
+
+
+def add_metrics(state: KartonState, metric: KartonMetrics, key: str) -> None:
+    metrics = {k: int(v) for k, v in state.backend.redis.hgetall(metric.value).items()}
+    for name, value in metrics.items():
+        karton_metrics.labels(key, name).set(value)
 
 
 @app.route("/varz", methods=["GET"])
@@ -194,6 +202,12 @@ def varz():
             karton_tasks.labels(name, priority.value, status.value).set(count)
         replicas = len(state.replicas[queue.bind.identity])
         karton_replicas.labels(safe_name, queue.bind.version).set(replicas)
+
+    add_metrics(state, KartonMetrics.TASK_ASSIGNED, "assigned")
+    add_metrics(state, KartonMetrics.TASK_CONSUMED, "consumed")
+    add_metrics(state, KartonMetrics.TASK_CRASHED, "crashed")
+    add_metrics(state, KartonMetrics.TASK_GARBAGE_COLLECTED, "garbage-collected")
+    add_metrics(state, KartonMetrics.TASK_PRODUCED, "produced")
 
     return generate_latest()
 
