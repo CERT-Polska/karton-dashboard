@@ -4,8 +4,8 @@
 Crashed tasks
 {% if queue.crashed_tasks %}
   <div class="btn-group float-right">
-    <form action={{url_for("restart_queue_tasks", queue_name=name)}} method="POST" id="restartQueue">
-      <button class="btn btn-sm btn-secondary mr-1" type="submit" form="restartQueue" value="Submit" title="restart all tasks">Restart all</button>
+    <form action={{url_for("restart_queue_tasks", queue_name=name)}} method="POST">
+      <button class="btn btn-sm btn-secondary mr-1" type="submit" value="Submit" title="restart all tasks">Restart all</button>
     </form>
     <div class="divider"></div>
     <form action={{url_for("cancel_queue_tasks", queue_name=name)}} method="POST" id="cancelQueue">
@@ -52,11 +52,11 @@ Crashed tasks
       </td> 
       <td>
         <div class="btn-group">
-          <form action={{url_for("restart_task", task_id=task.uid)}} method="POST" id="restartTask">
-            <button class="btn btn-dark mr-1" type="submit" form="restartTask" value="Submit" title="restart task">⭯</button>
+          <form action={{url_for("restart_task", task_id=task.uid)}} method="POST">
+            <button class="btn btn-dark mr-1" type="submit" value="Submit" title="restart task">⭯</button>
           </form>
-          <form action={{url_for("cancel_task", task_id=task.uid)}} method="POST" id="cancelTask">
-            <button class="btn btn-dark" type="submit" form="cancelTask" value="Submit" title="cancel task">✕</button>
+          <form action={{url_for("cancel_task", task_id=task.uid)}} method="POST">
+            <button class="btn btn-dark" type="submit" value="Submit" title="cancel task">✕</button>
           </form>
         </div>
       </td>
