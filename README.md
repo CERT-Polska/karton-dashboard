@@ -20,7 +20,7 @@ The `karton-dashboard` is just a wrapper on the `flask` program, and it works wi
 
 ## Metrics
 
-Karton keeps track of consumed, produced, crashed tasks for each queue.
+Karton tracks number of consumed, produced and crashed tasks for each service (identity).
 
 Karton-dashboard exposes this information (in addition to some other task/queue statistics) on the `/varz` endpoint using Prometheus data format.
 
