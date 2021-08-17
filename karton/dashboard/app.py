@@ -4,6 +4,7 @@ import re
 import textwrap
 from collections import defaultdict
 from datetime import datetime
+from itertools import product
 from operator import itemgetter
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -189,8 +190,10 @@ def varz():
     """ Update and get prometheus metrics """
 
     state = KartonState(karton.backend)
-    for _key, gauge in karton_tasks._metrics.items():
-        gauge.set(0)
+
+    # Clear the metrics completely to account for disappearing queues
+    karton_tasks.clear()
+    karton_replicas.clear()
 
     for queue in state.queues.values():
         safe_name = re.sub("[^a-z0-9]", "_", queue.bind.identity.lower())
@@ -198,8 +201,13 @@ def varz():
         for task in queue.tasks:
             task_infos[(safe_name, task.priority, task.status)] += 1
 
+        # set the default of active queues to 0 to avoid gaps in graphs
+        for (priority, status) in product(TaskPriority, TaskState):
+            karton_tasks.labels(safe_name, priority.value, status.value).set(0)
+
         for (name, priority, status), count in task_infos.items():
             karton_tasks.labels(name, priority.value, status.value).set(count)
+
         replicas = len(state.replicas[queue.bind.identity])
         karton_replicas.labels(safe_name, queue.bind.version).set(replicas)
 
