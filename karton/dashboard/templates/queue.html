@@ -1,11 +1,20 @@
 {% extends 'queue_layout.html' %}
 {% block tasks %}
-<h4>Tasks</h4>
+<h4>Tasks
+  {% if queue.pending_tasks %}
+  <div class="btn-group float-right">
+    <form action={{url_for("cancel_pending_queue_tasks", queue_name=name)}} method="POST" id="cancelQueue">
+      <button class="btn btn-sm btn-secondary" type="submit" form="cancelQueue" value="Submit" title="cancel all tasks">Cancel all</button>
+    </form>  
+  </div> 
+{% endif %}
+</h4>
 <table class="table table-hover">
   <thead>
     <tr>
       <th scope="col">task</th>
       <th scope="col">headers</th>
+      <th scope="col">actions</th>
     </tr>
   </thead>
   <tbody>
@@ -31,6 +40,13 @@
         <span class="badge badge-secondary">{{hdrname}}:{{hdrval}}</span>
         {% endif %}
         {% endfor %}
+      </td>
+      <td>
+        <div class="btn-group">
+          <form action={{url_for("cancel_task", task_id=task.uid)}} method="POST">
+            <button class="btn btn-dark" type="submit" value="Submit" title="cancel task">✕</button>
+          </form>
+        </div>
       </td>
     </tr>
     {% endfor %}

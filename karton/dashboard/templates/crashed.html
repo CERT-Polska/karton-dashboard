@@ -4,11 +4,11 @@
 Crashed tasks
 {% if queue.crashed_tasks %}
   <div class="btn-group float-right">
-    <form action={{url_for("restart_queue_tasks", queue_name=name)}} method="POST">
+    <form action={{url_for("restart_crashed_queue_tasks", queue_name=name)}} method="POST">
       <button class="btn btn-sm btn-secondary mr-1" type="submit" value="Submit" title="restart all tasks">Restart all</button>
     </form>
     <div class="divider"></div>
-    <form action={{url_for("cancel_queue_tasks", queue_name=name)}} method="POST" id="cancelQueue">
+    <form action={{url_for("cancel_crashed_queue_tasks", queue_name=name)}} method="POST" id="cancelQueue">
       <button class="btn btn-sm btn-secondary" type="submit" form="cancelQueue" value="Submit" title="cancel all tasks">Cancel all</button>
     </form>
   </div>
