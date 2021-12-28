@@ -263,6 +263,7 @@ def cancel_crashed_queue_tasks(queue_name):
     cancel_tasks(queue.crashed_tasks)
     return redirect(request.referrer)
 
+
 @app.route("/<queue_name>/cancel_pending", methods=["POST"])
 def cancel_pending_queue_tasks(queue_name):
     state = KartonState(karton.backend)
@@ -272,6 +273,7 @@ def cancel_pending_queue_tasks(queue_name):
 
     cancel_tasks(queue.pending_tasks)
     return redirect(request.referrer)
+
 
 @app.route("/restart_task/<task_id>/restart", methods=["POST"])
 def restart_task(task_id):
