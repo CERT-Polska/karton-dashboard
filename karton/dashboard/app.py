@@ -242,8 +242,8 @@ def get_queues_api():
     )
 
 
-@app.route("/<queue_name>/restart", methods=["POST"])
-def restart_queue_tasks(queue_name):
+@app.route("/<queue_name>/restart_crashed", methods=["POST"])
+def restart_crashed_queue_tasks(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
     if not queue:
@@ -253,14 +253,25 @@ def restart_queue_tasks(queue_name):
     return redirect(request.referrer)
 
 
-@app.route("/<queue_name>/cancel", methods=["POST"])
-def cancel_queue_tasks(queue_name):
+@app.route("/<queue_name>/cancel_crashed", methods=["POST"])
+def cancel_crashed_queue_tasks(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
     if not queue:
         return jsonify({"error": "Queue doesn't exist"}), 404
 
     cancel_tasks(queue.crashed_tasks)
+    return redirect(request.referrer)
+
+
+@app.route("/<queue_name>/cancel_pending", methods=["POST"])
+def cancel_pending_queue_tasks(queue_name):
+    state = KartonState(karton.backend)
+    queue = state.queues.get(queue_name)
+    if not queue:
+        return jsonify({"error": "Queue doesn't exist"}), 404
+
+    cancel_tasks(queue.pending_tasks)
     return redirect(request.referrer)
 
 
