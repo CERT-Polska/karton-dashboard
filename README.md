@@ -42,4 +42,4 @@ Here are a few examples of how the data can be digested and presented in a grafa
 ![](img/grafana_pending.png)
 
 
-![Co-financed by the Connecting Europe Facility by of the European Union](https://www.cert.pl/wp-content/uploads/2019/02/en_horizontal_cef_logo-1.png)
+![Co-financed by the Connecting Europe Facility by of the European Union](https://www.cert.pl/uploads/2019/02/en_horizontal_cef_logo-e1550495232540.png)
