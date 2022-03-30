@@ -187,7 +187,7 @@ def add_metrics(state: KartonState, metric: KartonMetrics, key: str) -> None:
 
 @app.route("/varz", methods=["GET"])
 def varz():
-    """ Update and get prometheus metrics """
+    """Update and get prometheus metrics"""
 
     state = KartonState(karton.backend)
 
