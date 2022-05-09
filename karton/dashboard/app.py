@@ -204,7 +204,7 @@ def varz():
         for task in queue.tasks:
             task_infos[(safe_name, task.priority, task.status)] += 1
 
-        # set the default of active queues to 0 to avoid gaps in graph
+        # set the default of active queues to 0 to avoid gaps in graphs
         for (priority, status) in product(TaskPriority, TaskState):
             karton_tasks.labels(safe_name, priority.value, status.value).set(0)
 

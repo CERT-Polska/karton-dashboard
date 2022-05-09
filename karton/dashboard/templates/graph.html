@@ -31,12 +31,6 @@
   </div>
 
   <div id="graph-container" style="height: 100vh;"></div>
-
-  <input type="hidden" id="graph_id" value="{{ raw_graph }}" />
   <script src="../static/graph/graph.js"></script>
-  <script>
-    var raw_graph = document.querySelector("#graph_id").value;
-    show_graph(raw_graph);
-  </script>
 </div>
 {% endblock %}
