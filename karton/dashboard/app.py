@@ -375,8 +375,13 @@ def get_analysis_api(root_id):
 
 @app.route("/graph", methods=["GET"])
 def get_graph():
+    return render_template("graph.html")
+
+
+@app.route("/graph/generate", methods=["GET"])
+def get_graph_test():
     state = KartonState(karton.backend)
     graph = KartonGraph(state)
     raw_graph = graph.generate_graph()
 
-    return render_template("graph.html", raw_graph=raw_graph)
+    return raw_graph
