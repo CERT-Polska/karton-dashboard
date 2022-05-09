@@ -55,7 +55,7 @@ class KartonGraph:
         :type graph: networkx.DiGraph
         :param options: styling options, which consists of:
         \t`color`: a dictionary specifying RGBA
-        \t`size`: a function that takes a DiGraph and a node identity as an input and returns a size (`float`) 
+        \t`size`: a function that takes a DiGraph and a node identity as an input and returns a size (`float`)
         :type: Optional[Dict[str, Union[Dict[str, int], Callable[[DiGraph, str], float]]]]
         """
         if not options:
