@@ -11,26 +11,7 @@ const attr = {
 };
 
 const loadingOpts = {
-  text: 'loading graph, please wait',
-  color: '#3399F3',
-  textColor: '#000',
-  maskColor: 'rgba(255, 255, 255, 0.8)',
-  zlevel: 0,
-
-  // Font size. Available since `v4.8.0`.
-  fontSize: 12,
-  // Show an animated "spinner" or not. Available since `v4.8.0`.
-  showSpinner: true,
-  // Radius of the "spinner". Available since `v4.8.0`.
-  spinnerRadius: 10,
-  // Line width of the "spinner". Available since `v4.8.0`.
-  lineWidth: 5,
-  // Font thick weight. Available since `v5.0.1`.
-  fontWeight: 'normal',
-  // Font style. Available since `v5.0.1`.
-  fontStyle: 'normal',
-  // Font family. Available since `v5.0.1`.
-  fontFamily: 'sans-serif'
+  text: 'loading graph, please wait'
 };
 
 const arrayToObject = (array) =>

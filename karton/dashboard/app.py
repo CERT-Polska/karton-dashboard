@@ -379,7 +379,7 @@ def get_graph():
 
 
 @app.route("/graph/generate", methods=["GET"])
-def get_graph_test():
+def generate_graph():
     state = KartonState(karton.backend)
     graph = KartonGraph(state)
     raw_graph = graph.generate_graph()
