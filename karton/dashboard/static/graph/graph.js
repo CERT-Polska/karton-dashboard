@@ -66,6 +66,7 @@ $.get("/graph/generate", function(raw_graph) {
     legend: [],
     animation: true,
     animationDuration: 1500,
+    animationDelay: 1000,
     scaleLimit: {},
     animationEasingUpdate: "quinticInOut",
     dataZoom: [
