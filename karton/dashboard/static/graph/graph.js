@@ -66,7 +66,6 @@ $.get("/graph/generate", function(raw_graph) {
     legend: [],
     animation: true,
     animationDuration: 1500,
-    animationDelay: 1000,
     scaleLimit: {},
     animationEasingUpdate: "quinticInOut",
     dataZoom: [
@@ -107,7 +106,6 @@ $.get("/graph/generate", function(raw_graph) {
         data: graph.nodes,
         links: graph.links,
         roam: true,
-        focusNodeAdjacency: true,
         draggable: true,
         itemStyle: {
           normal: {
@@ -134,6 +132,7 @@ $.get("/graph/generate", function(raw_graph) {
           lineStyle: {
             width: 4,
           },
+          focus: 'adjacency',
         },
       },
     ],
@@ -197,17 +196,6 @@ myChart.on(
   (params) => {
     if (params.dataType === "node") {
       showInformation(params.data, params.color);
-      /* you can check params to look for what you want to pick */
-      myChart.dispatchAction({
-        /* HighLight type */
-        type: "focusNodeAdjacency",
-        /* OffLight type if you need */
-        // type: 'unfocusNodeAdjacency',
-        /* Positioning the series with seriesId/seriesIndex/seriesName */
-        seriesIndex: 0,
-        /* Positioning the node with dataIndex */
-        dataIndex: params.dataIndex,
-      });
     }
     params.event.stop();
   }
