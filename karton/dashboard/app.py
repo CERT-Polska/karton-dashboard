@@ -25,10 +25,13 @@ from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
 from karton.core.task import Task, TaskPriority, TaskState
 from prometheus_client import Gauge, generate_latest  # type: ignore
 
+from .graph.graph import KartonGraph
+
 logging.basicConfig(level=logging.INFO)
 
 app_path = Path(__file__).parent
 static_folder = app_path / "static"
+graph_folder = app_path / "graph"
 app = Flask(__name__, static_folder=None, template_folder=str(app_path / "templates"))
 
 karton = KartonBase(identity="karton.dashboard")
@@ -41,16 +44,12 @@ def restart_tasks(tasks: List[Task]) -> None:
     for task in tasks:
         # spawn a new task and mark the original one as finished
         producer.send_task(task.fork_task())
-        karton.backend.set_task_status(
-            task=task, status=TaskState.FINISHED, consumer=identity
-        )
+        karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
 
 
 def cancel_tasks(tasks: List[Task]) -> None:
     for task in tasks:
-        karton.backend.set_task_status(
-            task=task, status=TaskState.FINISHED, consumer="karton.dashboard-cancel"
-        )
+        karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
 
 
 class TaskView:
@@ -225,6 +224,11 @@ def static(path: str):
     return send_from_directory(static_folder, path)
 
 
+@app.route("/graph/<path:path>", methods=["GET"])
+def graph(path: str):
+    return send_from_directory(graph_folder, path)
+
+
 @app.route("/", methods=["GET"])
 def get_queues():
     state = KartonState(karton.backend)
@@ -363,3 +367,17 @@ def get_analysis_api(root_id):
         return jsonify({"error": "Analysis doesn't exist"}), 404
 
     return jsonify(AnalysisView(analysis).to_dict())
+
+
+@app.route("/graph", methods=["GET"])
+def get_graph():
+    return render_template("graph.html")
+
+
+@app.route("/graph/generate", methods=["GET"])
+def generate_graph():
+    state = KartonState(karton.backend)
+    graph = KartonGraph(state)
+    raw_graph = graph.generate_graph()
+
+    return raw_graph
