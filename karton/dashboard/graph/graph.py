@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, cast
 
 from karton.core.inspect import KartonState
-from networkx import DiGraph, generate_gexf
-from networkx.readwrite.json_graph import adjacency_data, adjacency_graph
+from networkx import DiGraph, generate_gexf  # type: ignore
+from networkx.readwrite.json_graph import (  # type: ignore
+    adjacency_data,
+    adjacency_graph,
+)
 
 NODE_SIZE: Callable[
     [DiGraph, str], float
@@ -16,7 +19,7 @@ OPTIONS = ["color", "size"]
 
 class KartonNode:
     def __init__(
-        self, identity: str, metadata: dict[str, str], filters, outputs
+        self, identity: str, metadata: Dict[str, str], filters, outputs
     ) -> None:
         self.identity = identity
         self.metadata = metadata
@@ -45,9 +48,7 @@ class KartonGraph:
     def style_nodes(
         self,
         graph: DiGraph,
-        options: Optional[
-            Dict[str, Union[Dict[str, int], Callable[[DiGraph, str], float]]]
-        ] = None,
+        options: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Style the graph.
 
@@ -57,8 +58,7 @@ class KartonGraph:
         \t`color`: a dictionary specifying RGBA
         \t`size`: a function that takes a DiGraph and a node identity as
         \t    an input and returns a size (`float`)
-        :type: |
-            Optional[Dict[str, Union[Dict[str, int], Callable[[DiGraph, str], float]]]]
+        :type: Optional[Dict[str, Any]]
         """
         if not options:
             options = DEFAULT_OPTIONS
@@ -70,7 +70,9 @@ class KartonGraph:
         for node in self.nodes:
             graph.nodes[node.identity]["viz"] = {
                 "color": options["color"],
-                "size": options["size"](graph, node.identity),
+                "size": cast(Callable[[DiGraph, str], float], options["size"])(
+                    graph, node.identity
+                ),
             }
 
             graph.nodes[node.identity]["version"] = node.metadata["version"]
@@ -102,9 +104,10 @@ class KartonGraph:
             values[outputs_object.identity]["outputs"] = outputs_object.outputs
 
         for identity in values.keys():
+            metadata = cast(Dict[str, str], values[identity]["metadata"])
             node = KartonNode(
                 identity=identity,
-                metadata=values[identity]["metadata"],
+                metadata=metadata,
                 filters=values[identity]["filters"],
                 outputs=values[identity]["outputs"],
             )

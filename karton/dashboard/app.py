@@ -44,16 +44,12 @@ def restart_tasks(tasks: List[Task]) -> None:
     for task in tasks:
         # spawn a new task and mark the original one as finished
         producer.send_task(task.fork_task())
-        karton.backend.set_task_status(
-            task=task, status=TaskState.FINISHED, consumer=identity
-        )
+        karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
 
 
 def cancel_tasks(tasks: List[Task]) -> None:
     for task in tasks:
-        karton.backend.set_task_status(
-            task=task, status=TaskState.FINISHED, consumer="karton.dashboard-cancel"
-        )
+        karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
 
 
 class TaskView:
