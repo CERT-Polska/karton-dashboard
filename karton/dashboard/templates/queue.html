@@ -13,6 +13,7 @@
   <thead>
     <tr>
       <th scope="col">task</th>
+      <th scope="col">last update</th>
       <th scope="col">headers</th>
       <th scope="col">actions</th>
     </tr>
@@ -23,21 +24,22 @@
       <td>
         <a href="/task/{{task.uid}}">{{ task.uid }}</a>
       </td>
+      <td><pre>{{ task.last_update|render_timestamp }}</pre></td>
       <td>
         {% if task.priority != 'normal' %}
-        <span class="badge badge-dark">{{task.priority}}</span>
+        <span class="badge bg-dark">{{task.priority}}</span>
         {% endif %}
-        <span class="badge badge-light">{{task.status}}</span>
+        <span class="badge bg-light">{{task.status}}</span>
         {% for hdrname, hdrval in task.headers.items() %}
         {% if hdrname == 'type' %}
-        <span class="badge badge-primary">{{hdrname}}:{{hdrval}}</span>
+        <span class="badge bg-primary">{{hdrname}}:{{hdrval}}</span>
         {% elif hdrname == 'kind' %}
-        <span class="badge badge-info">{{hdrname}}:{{hdrval}}</span>
+        <span class="badge bg-info">{{hdrname}}:{{hdrval}}</span>
         {% elif hdrname == 'stage' %}
-        <span class="badge badge-success">{{hdrname}}:{{hdrval}}</span>
+        <span class="badge bg-success">{{hdrname}}:{{hdrval}}</span>
         {% elif hdrname == 'receiver' %}
         {% else %}
-        <span class="badge badge-secondary">{{hdrname}}:{{hdrval}}</span>
+        <span class="badge bg-secondary">{{hdrname}}:{{hdrval}}</span>
         {% endif %}
         {% endfor %}
       </td>

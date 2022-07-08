@@ -158,6 +158,11 @@ def render_description(description) -> Optional[str]:
     return mistune.markdown(textwrap.dedent(description))
 
 
+@app.template_filter("render_timestamp")
+def render_timestamp(timestamp) -> str:
+    return datetime.fromtimestamp(timestamp).strftime("%Y-%d-%m %H:%M:%S")
+
+
 def get_xrefs(root_uid) -> List[Tuple[str, str]]:
     config = karton.config.config
     if not config.has_option("dashboard", "xrefs"):

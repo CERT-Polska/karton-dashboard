@@ -1,13 +1,13 @@
 {% extends 'layout.html' %}
 {% block content %}
-<div class="bs-component" style="padding-top: 100px">
+<div class="bs-component" style="padding-top: 10px">
   <h3 class="text-center">task {{ task.taskid }}</h3>
 
   <dl class="row">
     <dt class="col-3">Status</dt>
-    <dd class="col-9"><span class="badge badge-light">{{task.status.value}}</span></dd>
+    <dd class="col-9"><span class="badge bg-light">{{task.status.value}}</span></dd>
     <dt class="col-3">Priority</dt>
-    <dd class="col-9"><span class="badge badge-dark">{{task.priority.value}}</span></dd>
+    <dd class="col-9"><span class="badge bg-dark">{{task.priority.value}}</span></dd>
     <dt class="col-3">Last status change</dt>
     <dd class="col-9">{{task.last_update}} ({{task.last_update_delta}})</dd>
     <dt class="col-3">UID</dt>
@@ -43,14 +43,14 @@
     <dd class="col-9">
       {% for hdrname, hdrval in task.headers.items() %}
       {% if hdrname == 'type' %}
-      <span class="badge badge-primary">{{hdrname}}:{{hdrval}}</span>
+      <span class="badge bg-primary">{{hdrname}}:{{hdrval}}</span>
       {% elif hdrname == 'kind' %}
-      <span class="badge badge-info">{{hdrname}}:{{hdrval}}</span>
+      <span class="badge bg-info">{{hdrname}}:{{hdrval}}</span>
       {% elif hdrname == 'stage' %}
-      <span class="badge badge-success">{{hdrname}}:{{hdrval}}</span>
+      <span class="badge bg-success">{{hdrname}}:{{hdrval}}</span>
       {% elif hdrname == 'receiver' %}
       {% else %}
-      <span class="badge badge-secondary">{{hdrname}}:{{hdrval}}</span>
+      <span class="badge bg-secondary">{{hdrname}}:{{hdrval}}</span>
       {% endif %}
       {% endfor %}
     </dd>
