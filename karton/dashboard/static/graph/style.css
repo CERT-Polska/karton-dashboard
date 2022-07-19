@@ -12,7 +12,7 @@ body {
   position: absolute;
   width: 230px;
   color: #fff;
-  background-color: rgb(84, 124, 172);
+  background-color: rgb(42, 67, 92);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   width: 320px;
   left: -300px;
@@ -29,5 +29,3 @@ body {
   width: 100%;
   max-width: 100%;
 }
-
-

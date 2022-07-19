@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 {% block content %}
-<div class="bs-component" style="padding-top: 100px">
+<div class="bs-component" style="padding-top: 10px">
   <h3 class="text-center">binds</h3>
 
   <table class="table table-hover">
@@ -19,19 +19,19 @@
         <td>
           <a href="queue/{{ queue_name }}">{{ queue_name }}</a>
           <div>
-            <span class="badge badge-info" title="karton-core library version">
+            <span class="badge bg-info" title="karton-core library version">
               📦v{{ queue.bind.version }}
             </span>
             {% if queue.bind.service_version %}
-              <span class="badge badge-secondary" title="service package version">
+              <span class="badge bg-secondary" title="service package version">
                 v{{ queue.bind.service_version }}
               </span>
             {% endif %}
             {% if not queue.bind.persistent %}
-                <span class="badge badge-danger">non-persistent</span>
+                <span class="badge bg-danger">non-persistent</span>
             {% endif %}
             {% if not queue.bind.info %}
-                <span class="badge badge-danger">undocumented</span>
+                <span class="badge bg-danger">undocumented</span>
             {% endif %}
           </div>
         </td>
@@ -40,13 +40,13 @@
           <div>
             {% for filtername, filterval in filter.items() %}
             {% if filtername == 'type' %}
-            <span class="badge badge-primary">{{filtername}}:{{filterval}}</span>
+            <span class="badge bg-primary">{{filtername}}:{{filterval}}</span>
             {% elif filtername == 'kind' %}
-            <span class="badge badge-info">{{filtername}}:{{filterval}}</span>
+            <span class="badge bg-info">{{filtername}}:{{filterval}}</span>
             {% elif filtername == 'stage' %}
-            <span class="badge badge-success">{{filtername}}:{{filterval}}</span>
+            <span class="badge bg-success">{{filtername}}:{{filterval}}</span>
             {% else %}
-            <span class="badge badge-secondary">{{filtername}}:{{filterval}}</span>
+            <span class="badge bg-secondary">{{filtername}}:{{filterval}}</span>
             {% endif %}
             {% endfor %}
           </div>
@@ -55,26 +55,26 @@
         <td>
           {% set length = queue.pending_tasks | length %}
           {% if length == 0 %}
-          <span class="badge badge-success">{{length}}</span>
+          <span class="badge bg-success">{{length}}</span>
           {% elif length < 25 %}
-          <span class="badge badge-warning">{{length}}</span>
+          <span class="badge bg-warning">{{length}}</span>
           {% else %}
-          <span class="badge badge-danger">{{length}}</span>
+          <span class="badge bg-danger">{{length}}</span>
           {% endif %}
         </td>
         <td>
           {% set length = queue.crashed_tasks | length %}
           {% set url = url_for("get_crashed_queue", queue_name=queue_name) %}
-          {% set badgeClass = "badge-success" if length == 0 else "badge-danger" %}
+          {% set badgeClass = "bg-success" if length == 0 else "bg-danger" %}
           <span class="badge {{badgeClass}}">
               <a href={{url}} style="color: inherit">{{length}}</a>
           </span>
         </td>
         <td>
           {% if queue.online_consumers_count == 0 %}
-          <span class="badge badge-danger">{{queue.online_consumers_count}}</span>
+          <span class="badge bg-danger">{{queue.online_consumers_count}}</span>
           {% else %}
-          <span class="badge badge-success">{{queue.online_consumers_count}}</span>
+          <span class="badge bg-success">{{queue.online_consumers_count}}</span>
           {% endif %}
         </td>
       </tr>

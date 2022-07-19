@@ -5,7 +5,7 @@ Crashed tasks
 {% if queue.crashed_tasks %}
   <div class="btn-group float-right">
     <form action={{url_for("restart_crashed_queue_tasks", queue_name=name)}} method="POST">
-      <button class="btn btn-sm btn-secondary mr-1" type="submit" value="Submit" title="restart all tasks">Restart all</button>
+      <button class="btn btn-sm btn-secondary mx-1" type="submit" value="Submit" title="restart all tasks">Restart all</button>
     </form>
     <div class="divider"></div>
     <form action={{url_for("cancel_crashed_queue_tasks", queue_name=name)}} method="POST" id="cancelQueue">
@@ -18,6 +18,7 @@ Crashed tasks
   <thead>
     <tr>
       <th scope="col">task</th>
+      <th scope="col">last update</th>
       <th scope="col">headers</th>
       <th scope="col">exception</th>
       <th scope="col">actions</th>
@@ -29,31 +30,32 @@ Crashed tasks
       <td>
         <a href="/task/{{ task.uid }}">{{ task.uid }}</a>
       </td>
+      <td><pre>{{ task.last_update|render_timestamp }}</pre></td>
       <td>
         {% if task.priority != 'normal' %}
-        <span class="badge badge-dark">{{task.priority.value}}</span>
+        <span class="badge bg-dark">{{task.priority.value}}</span>
         {% endif %}
-        <span class="badge badge-light">{{task.status.value}}</span>
+        <span class="badge bg-light">{{task.status.value}}</span>
         {% for hdrname, hdrval in task.headers.items() %}
         {% if hdrname == 'type' %}
-        <span class="badge badge-primary">{{hdrname}}:{{hdrval}}</span>
+        <span class="badge bg-primary">{{hdrname}}:{{hdrval}}</span>
         {% elif hdrname == 'kind' %}
-        <span class="badge badge-info">{{hdrname}}:{{hdrval}}</span>
+        <span class="badge bg-info">{{hdrname}}:{{hdrval}}</span>
         {% elif hdrname == 'stage' %}
-        <span class="badge badge-success">{{hdrname}}:{{hdrval}}</span>
+        <span class="badge bg-success">{{hdrname}}:{{hdrval}}</span>
         {% elif hdrname == 'receiver' %}
         {% else %}
-        <span class="badge badge-secondary">{{hdrname}}:{{hdrval}}</span>
+        <span class="badge bg-secondary">{{hdrname}}:{{hdrval}}</span>
         {% endif %}
         {% endfor %}
       </td>
       <td>
-        {{ task.error[-1] }}
+        <code>{{ task.error[-1] }}</code>
       </td> 
       <td>
         <div class="btn-group">
           <form action={{url_for("restart_task", task_id=task.uid)}} method="POST">
-            <button class="btn btn-dark mr-1" type="submit" value="Submit" title="restart task">⭯</button>
+            <button class="btn btn-dark mx-1" type="submit" value="Submit" title="restart task">⭯</button>
           </form>
           <form action={{url_for("cancel_task", task_id=task.uid)}} method="POST">
             <button class="btn btn-dark" type="submit" value="Submit" title="cancel task">✕</button>
