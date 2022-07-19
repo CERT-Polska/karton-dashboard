@@ -1,6 +1,7 @@
 {% extends 'queue_layout.html' %}
 {% block tasks %}
-<h4>Tasks
+<h4>
+  <span class="align-middle">Tasks</span>
   {% if queue.pending_tasks %}
   <div class="btn-group float-right">
     <form action={{url_for("cancel_pending_queue_tasks", queue_name=name)}} method="POST" id="cancelQueue">
