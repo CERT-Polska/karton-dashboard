@@ -22,7 +22,7 @@ The `karton-dashboard` is just a wrapper on the `flask` program, and it works wi
 
 If you have other systems that store artifacts related to a specific karton task there's an option to easily link them in the task view.
 
-You'll need to set the `xrefs` options of `dashboard` section in your `karton.init` configuration file like so:
+You'll need to set the `xrefs` options of `dashboard` section in your `karton.ini` configuration file like so:
 
 ```ini
 [dashboard]
