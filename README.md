@@ -18,6 +18,22 @@ $ karton-dashboard run -h 127.0.0.1 -p 5000
 
 The `karton-dashboard` is just a wrapper on the `flask` program, and it works with any arguments accepted by flask. For example `karton-dashboard --help`, or `karton-dashboard run -h 0.0.0.0 -p 1234`. See [flask documentation](https://flask.palletsprojects.com/en/1.1.x/cli/) for more information.
 
+# Xref buttons
+
+If you have other systems that store artifacts related to specific karton tasks there's an option to easily link them in the task view.
+
+You'll need to set the `xrefs` options of `dashboard` section in your `karton.init` configuration file like so:
+
+```ini
+[dashboard]
+xrefs={"mwdb": "https://mwdb.cert.pl/?q=karton:{root_uid}"}
+```
+
+Each link will be rendered as a button in the task view like so:
+
+![](img/xref_button.png)
+
+
 ## Metrics
 
 Karton tracks number of consumed, produced and crashed tasks for each service (identity).
