@@ -164,10 +164,9 @@ def render_timestamp(timestamp) -> str:
 
 
 def get_xrefs(root_uid) -> List[Tuple[str, str]]:
-    config = karton.config.config
-    if not config.has_option("dashboard", "xrefs"):
+    if not karton.config.has_option("dashboard", "xrefs"):
         return []
-    xrefs = json.loads(config.get("dashboard", "xrefs"))
+    xrefs = json.loads(karton.config.get("dashboard", "xrefs"))
     return sorted(
         (
             (label, url_template.format(root_uid=root_uid))
