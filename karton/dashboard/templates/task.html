@@ -1,7 +1,8 @@
 {% extends 'layout.html' %}
+{% block title %}karton task {{ task.uid }}{% endblock %}
 {% block content %}
 <div class="bs-component" style="padding-top: 10px">
-  <h3 class="text-center">task {{ task.taskid }}</h3>
+  <h3 class="text-center">task <code>{{ task.uid }}</code></h3>
 
   <dl class="row">
     <dt class="col-3">Status</dt>

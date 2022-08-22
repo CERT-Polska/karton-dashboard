@@ -3,8 +3,9 @@
 
 <head>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <title>karton</title>
+    <title>{% block title %}karton-dashboard{% endblock %}</title>
     <link rel="stylesheet" href="/static/bootstrap.css">
+    <link rel="shortcut icon" href="{{ url_for('static', path='favicon.ico') }}">
 </head>
 
 <body>
