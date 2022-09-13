@@ -160,7 +160,7 @@ def render_description(description) -> Optional[str]:
 
 @app.template_filter("render_timestamp")
 def render_timestamp(timestamp) -> str:
-    return datetime.fromtimestamp(timestamp).strftime("%Y-%d-%m %H:%M:%S")
+    return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def get_xrefs(root_uid) -> List[Tuple[str, str]]:
