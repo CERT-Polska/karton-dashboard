@@ -37,10 +37,11 @@ app = Flask(__name__, static_folder=None, template_folder=str(app_path / "templa
 karton = KartonBase(identity="karton.dashboard")
 
 markdown = mistune.create_markdown(
-    escape = True,
-    renderer = "html",
+    escape=True,
+    renderer="html",
     plugins=["url", "strikethrough", "footnotes", "table"],
 )
+
 
 def restart_tasks(tasks: List[Task]) -> None:
     identity = "karton.dashboard-retry"
