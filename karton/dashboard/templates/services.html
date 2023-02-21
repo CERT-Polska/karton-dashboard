@@ -28,11 +28,6 @@
               </span>
             {% endif %}
           </div>
-          {% if service.extra_info %}
-          <div>
-              <small>{{ service.extra_info }}</small>
-          </div>
-          {% endif %}
         </td>
         <td>
           <span class="badge bg-success">{{active_replicas | length}}</span>
