@@ -25,7 +25,7 @@ from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
 from karton.core.task import Task, TaskPriority, TaskState
 from prometheus_client import Gauge, generate_latest  # type: ignore
 
-from .graph.graph import KartonGraph
+from .graph import KartonGraph
 
 logging.basicConfig(level=logging.INFO)
 
