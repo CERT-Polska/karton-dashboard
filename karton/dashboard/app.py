@@ -25,6 +25,7 @@ from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
 from karton.core.task import Task, TaskPriority, TaskState
 from prometheus_client import Gauge, generate_latest  # type: ignore
 
+from .__version__ import __version__
 from .graph import KartonGraph
 
 logging.basicConfig(level=logging.INFO)
@@ -34,7 +35,14 @@ static_folder = app_path / "static"
 graph_folder = app_path / "graph"
 app = Flask(__name__, static_folder=None, template_folder=str(app_path / "templates"))
 
-karton = KartonBase(identity="karton.dashboard")
+
+class KartonDashboard(KartonBase):
+    identity = "karton.dashboard"
+    version = __version__
+    with_service_info = True
+
+
+karton = KartonDashboard()
 
 markdown = mistune.create_markdown(
     escape=True,
@@ -243,6 +251,15 @@ def graph(path: str):
 def get_queues():
     state = KartonState(karton.backend)
     return render_template("index.html", queues=state.queues)
+
+
+@app.route("/services", methods=["GET"])
+def get_services():
+    aggregated_services = defaultdict(list)
+    online_services = karton.backend.get_online_services()
+    for service in online_services:
+        aggregated_services[service].append(service)
+    return render_template("services.html", services=aggregated_services)
 
 
 @app.route("/api/queues", methods=["GET"])
