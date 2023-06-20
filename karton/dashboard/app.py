@@ -18,7 +18,6 @@ from flask import (  # type: ignore
     request,
     send_from_directory,
 )
-from karton.core import Producer
 from karton.core.backend import KartonMetrics
 from karton.core.base import KartonBase
 from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
@@ -49,16 +48,6 @@ markdown = mistune.create_markdown(
     renderer="html",
     plugins=["url", "strikethrough", "footnotes", "table"],
 )
-
-
-def restart_tasks(tasks: List[Task]) -> None:
-    identity = "karton.dashboard-retry"
-    producer = Producer(identity=identity)
-
-    for task in tasks:
-        # spawn a new task and mark the original one as finished
-        producer.send_task(task.fork_task())
-        karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
 
 
 def cancel_tasks(tasks: List[Task]) -> None:
@@ -280,7 +269,8 @@ def restart_crashed_queue_tasks(queue_name):
     if not queue:
         return jsonify({"error": "Queue doesn't exist"}), 404
 
-    restart_tasks(queue.crashed_tasks)
+    for task in queue.crashed_tasks:
+        karton.backend.restart_task(task)
     return redirect(request.referrer)
 
 
@@ -312,7 +302,7 @@ def restart_task(task_id):
     if not task:
         return jsonify({"error": "Task doesn't exist"}), 404
 
-    restart_tasks([task])
+    karton.backend.restart_task(task)
     return redirect(request.referrer)
 
 
