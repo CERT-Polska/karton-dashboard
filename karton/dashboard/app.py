@@ -50,6 +50,11 @@ markdown = mistune.create_markdown(
 )
 
 
+def cancel_tasks(tasks: List[Task]) -> None:
+    for task in tasks:
+        karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
+
+
 class TaskView:
     """
     All problems in computer science can be solved by another
@@ -276,7 +281,7 @@ def cancel_crashed_queue_tasks(queue_name):
     if not queue:
         return jsonify({"error": "Queue doesn't exist"}), 404
 
-    karton.backend.delete_tasks(queue.crashed_tasks)
+    cancel_tasks(queue.crashed_tasks)
     return redirect(request.referrer)
 
 
@@ -287,7 +292,7 @@ def cancel_pending_queue_tasks(queue_name):
     if not queue:
         return jsonify({"error": "Queue doesn't exist"}), 404
 
-    karton.backend.delete_tasks(queue.pending_tasks)
+    cancel_tasks(queue.pending_tasks)
     return redirect(request.referrer)
 
 
@@ -307,7 +312,7 @@ def cancel_task(task_id):
     if not task:
         return jsonify({"error": "Task doesn't exist"}), 404
 
-    karton.backend.delete_tasks([task])
+    cancel_tasks([task])
     return redirect(request.referrer)
 
 
