@@ -231,11 +231,6 @@ def static(path: str):
     return send_from_directory(static_folder, path)
 
 
-@app.route("/graph/<path:path>", methods=["GET"])
-def graph(path: str):
-    return send_from_directory(graph_folder, path)
-
-
 @app.route("/", methods=["GET"])
 def get_queues():
     state = KartonState(karton.backend)
