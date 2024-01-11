@@ -38,7 +38,11 @@ class KartonDashboard(KartonBase):
 
 karton = KartonDashboard()
 
-base_path = karton.config.get("dashboard", "base_path") if karton.config.has_option("dashboard", "base_path") else ""
+base_path = (
+    karton.config.get("dashboard", "base_path")
+    if karton.config.has_option("dashboard", "base_path")
+    else ""
+)
 
 markdown = mistune.create_markdown(
     escape=True,
@@ -209,7 +213,7 @@ def varz():
             task_infos[(safe_name, task.priority, task.status)] += 1
 
         # set the default of active queues to 0 to avoid gaps in graphs
-        for (priority, status) in product(TaskPriority, TaskState):
+        for priority, status in product(TaskPriority, TaskState):
             karton_tasks.labels(safe_name, priority.value, status.value).set(0)
 
         for (name, priority, status), count in task_infos.items():
