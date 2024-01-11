@@ -52,9 +52,9 @@ markdown = mistune.create_markdown(
 )
 
 
-
 def render_template(template_name: str, **kwargs: Dict[str, Any]) -> str:
     return flask_render_template(template_name, base_path=base_path, **kwargs)
+
 
 def cancel_tasks(tasks: List[Task]) -> None:
     for task in tasks:
