@@ -23,11 +23,11 @@
     </dd>
     <dt class="col-3">Origin</dt>
     <dd class="col-9">
-      <a href="/queue/{{task.headers['origin']}}">{{task.headers['origin']}}</a>
+      <a href="{{ base_path }}/queue/{{task.headers['origin']}}">{{task.headers['origin']}}</a>
     </dd>
     <dt class="col-3">Receiver</dt>
     <dd class="col-9">
-      <a href="/queue/{{task.headers['receiver']}}">{{task.headers['receiver']}}</a>
+      <a href="{{ base_path }}/queue/{{task.headers['receiver']}}">{{task.headers['receiver']}}</a>
     </dd>
     <dt class="col-3">Xrefs</dt>
     <dd class="col-9">
