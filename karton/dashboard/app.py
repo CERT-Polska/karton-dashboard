@@ -10,14 +10,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import mistune  # type: ignore
-from flask import (  # type: ignore
-    Flask,
-    jsonify,
-    redirect,
-    render_template as flask_render_template,
-    request,
-    send_from_directory,
-)
+from flask import Flask, jsonify, redirect
+from flask import render_template as flask_render_template  # type: ignore
+from flask import request, send_from_directory
 from karton.core.backend import KartonMetrics
 from karton.core.base import KartonBase
 from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
