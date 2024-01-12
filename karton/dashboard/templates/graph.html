@@ -1,7 +1,7 @@
 {% extends 'layout.html' %}
 {% block content %}
 <div class="bs-component">
-  <link type="text/css" rel="stylesheet" href="../static/graph/style.css" />
+  <link rel="stylesheet" href="{{ url_for('dashboard.static', path='graph/style.css') }}">
   <script
     type="text/javascript"
     src="https://code.jquery.com/jquery-3.4.1.min.js"
@@ -30,7 +30,7 @@
     </div>
   </div>
 
-  <div id="graph-container" style="height: 100vh;"></div>
-  <script src="../static/graph/graph.js"></script>
+  <div id="graph-container" data-generate-url="{{ url_for('dashboard.generate_graph') }}" style="height: 100vh;"></div>
+  <script src="{{ url_for('dashboard.static', path='graph/graph.js') }}"></script>
 </div>
 {% endblock %}

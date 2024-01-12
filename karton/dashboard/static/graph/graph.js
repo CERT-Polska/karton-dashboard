@@ -26,7 +26,7 @@ window.onresize = function() {
 
 option = null;
 myChart.showLoading('default', loadingOpts);
-$.get("/graph/generate", function(raw_graph) {
+$.get(dom.getAttribute('data-generate-url'), function(raw_graph) {
   myChart.hideLoading();
   myChart.resize();
 
