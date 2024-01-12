@@ -197,7 +197,7 @@ karton_metrics = Gauge("karton_metrics", "Metrics", ("metric", "name"))
 
 
 def add_metrics(state: KartonState, metric: KartonMetrics, key: str) -> None:
-    metrics = {k: int(v) for k, v in state.backend.redis.hgetall(metric.value).items()}
+    metrics = {k: int(v) for k, v in state.backend.redis.hgetall(metric.value).items()}  # type: ignore
     for name, value in metrics.items():
         karton_metrics.labels(key, name).set(value)
 
