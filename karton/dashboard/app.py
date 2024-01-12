@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import mistune  # type: ignore
 from flask import (
+    Blueprint,
     Flask,
     jsonify,
     redirect,
