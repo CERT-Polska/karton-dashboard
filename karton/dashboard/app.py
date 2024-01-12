@@ -10,9 +10,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import mistune  # type: ignore
-from flask import Flask, jsonify, redirect
-from flask import render_template as flask_render_template  # type: ignore
-from flask import request, send_from_directory
+from flask import (
+    Flask,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+)
 from karton.core.backend import KartonMetrics
 from karton.core.base import KartonBase
 from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
@@ -23,11 +28,6 @@ from .__version__ import __version__
 from .graph import KartonGraph
 
 logging.basicConfig(level=logging.INFO)
-
-app_path = Path(__file__).parent
-static_folder = app_path / "static"
-graph_folder = app_path / "graph"
-app = Flask(__name__, static_folder=None, template_folder=str(app_path / "templates"))
 
 
 class KartonDashboard(KartonBase):
@@ -44,15 +44,21 @@ base_path = (
     else ""
 )
 
+app_path = Path(__file__).parent
+static_folder = app_path / "static"
+graph_folder = app_path / "graph"
+app = Flask(__name__, static_folder=None)
+blueprint = Blueprint(
+    "karton-dashboard", __name__, template_folder=str(app_path / "templates")
+)
+app.register_blueprint(blueprint, url_prefix=base_path)
+
+
 markdown = mistune.create_markdown(
     escape=True,
     renderer="html",
     plugins=["url", "strikethrough", "footnotes", "table"],
 )
-
-
-def render_template(template_name: str, **kwargs: Dict[str, Any]) -> str:
-    return flask_render_template(template_name, base_path=base_path, **kwargs)
 
 
 def cancel_tasks(tasks: List[Task]) -> None:
@@ -196,7 +202,7 @@ def add_metrics(state: KartonState, metric: KartonMetrics, key: str) -> None:
         karton_metrics.labels(key, name).set(value)
 
 
-@app.route(base_path + "/varz", methods=["GET"])
+@app.route("/varz", methods=["GET"])
 def varz():
     """Update and get prometheus metrics"""
 
@@ -231,18 +237,18 @@ def varz():
     return generate_latest()
 
 
-@app.route(base_path + "/static/<path:path>", methods=["GET"])
+@app.route("/static/<path:path>", methods=["GET"])
 def static(path: str):
     return send_from_directory(static_folder, path)
 
 
-@app.route(base_path + "/", methods=["GET"])
+@app.route("/", methods=["GET"])
 def get_queues():
     state = KartonState(karton.backend)
     return render_template("index.html", queues=state.queues)
 
 
-@app.route(base_path + "/services", methods=["GET"])
+@app.route("/services", methods=["GET"])
 def get_services():
     aggregated_services = defaultdict(list)
     online_services = karton.backend.get_online_services()
@@ -251,7 +257,7 @@ def get_services():
     return render_template("services.html", services=aggregated_services)
 
 
-@app.route(base_path + "/api/queues", methods=["GET"])
+@app.route("/api/queues", methods=["GET"])
 def get_queues_api():
     state = KartonState(karton.backend)
     return jsonify(
@@ -262,7 +268,7 @@ def get_queues_api():
     )
 
 
-@app.route(base_path + "/<queue_name>/restart_crashed", methods=["POST"])
+@app.route("/<queue_name>/restart_crashed", methods=["POST"])
 def restart_crashed_queue_tasks(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
@@ -274,7 +280,7 @@ def restart_crashed_queue_tasks(queue_name):
     return redirect(request.referrer)
 
 
-@app.route(base_path + "/<queue_name>/cancel_crashed", methods=["POST"])
+@app.route("/<queue_name>/cancel_crashed", methods=["POST"])
 def cancel_crashed_queue_tasks(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
@@ -285,7 +291,7 @@ def cancel_crashed_queue_tasks(queue_name):
     return redirect(request.referrer)
 
 
-@app.route(base_path + "/<queue_name>/cancel_pending", methods=["POST"])
+@app.route("/<queue_name>/cancel_pending", methods=["POST"])
 def cancel_pending_queue_tasks(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
@@ -296,7 +302,7 @@ def cancel_pending_queue_tasks(queue_name):
     return redirect(request.referrer)
 
 
-@app.route(base_path + "/restart_task/<task_id>/restart", methods=["POST"])
+@app.route("/restart_task/<task_id>/restart", methods=["POST"])
 def restart_task(task_id):
     task = karton.backend.get_task(task_id)
     if not task:
@@ -306,7 +312,7 @@ def restart_task(task_id):
     return redirect(request.referrer)
 
 
-@app.route(base_path + "/cancel_task/<task_id>/cancel", methods=["POST"])
+@app.route("/cancel_task/<task_id>/cancel", methods=["POST"])
 def cancel_task(task_id):
     task = karton.backend.get_task(task_id)
     if not task:
@@ -316,7 +322,7 @@ def cancel_task(task_id):
     return redirect(request.referrer)
 
 
-@app.route(base_path + "/queue/<queue_name>", methods=["GET"])
+@app.route("/queue/<queue_name>", methods=["GET"])
 def get_queue(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
@@ -326,7 +332,7 @@ def get_queue(queue_name):
     return render_template("queue.html", name=queue_name, queue=queue)
 
 
-@app.route(base_path + "/queue/<queue_name>/crashed", methods=["GET"])
+@app.route("/queue/<queue_name>/crashed", methods=["GET"])
 def get_crashed_queue(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
@@ -336,7 +342,7 @@ def get_crashed_queue(queue_name):
     return render_template("crashed.html", name=queue_name, queue=queue)
 
 
-@app.route(base_path + "/api/queue/<queue_name>", methods=["GET"])
+@app.route("/api/queue/<queue_name>", methods=["GET"])
 def get_queue_api(queue_name):
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
@@ -345,7 +351,7 @@ def get_queue_api(queue_name):
     return jsonify(QueueView(queue).to_dict())
 
 
-@app.route(base_path + "/task/<task_id>", methods=["GET"])
+@app.route("/task/<task_id>", methods=["GET"])
 def get_task(task_id):
     task = karton.backend.get_task(task_id)
     if not task:
@@ -356,7 +362,7 @@ def get_task(task_id):
     )
 
 
-@app.route(base_path + "/api/task/<task_id>", methods=["GET"])
+@app.route("/api/task/<task_id>", methods=["GET"])
 def get_task_api(task_id):
     task = karton.backend.get_task(task_id)
     if not task:
@@ -364,7 +370,7 @@ def get_task_api(task_id):
     return jsonify(TaskView(task).to_dict())
 
 
-@app.route(base_path + "/analysis/<root_id>", methods=["GET"])
+@app.route("/analysis/<root_id>", methods=["GET"])
 def get_analysis(root_id):
     state = KartonState(karton.backend)
     analysis = state.analyses.get(root_id)
@@ -376,7 +382,7 @@ def get_analysis(root_id):
     )
 
 
-@app.route(base_path + "/api/analysis/<root_id>", methods=["GET"])
+@app.route("/api/analysis/<root_id>", methods=["GET"])
 def get_analysis_api(root_id):
     state = KartonState(karton.backend)
     analysis = state.analyses.get(root_id)
@@ -386,12 +392,12 @@ def get_analysis_api(root_id):
     return jsonify(AnalysisView(analysis).to_dict())
 
 
-@app.route(base_path + "/graph", methods=["GET"])
+@app.route("/graph", methods=["GET"])
 def get_graph():
     return render_template("graph.html")
 
 
-@app.route(base_path + "/graph/generate", methods=["GET"])
+@app.route("/graph/generate", methods=["GET"])
 def generate_graph():
     state = KartonState(karton.backend)
     graph = KartonGraph(state)
