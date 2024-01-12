@@ -17,7 +17,7 @@
       {% for (queue_name, queue) in queues|dictsort %}
       <tr>
         <td>
-          <a href="{{url_for("get_queue", queue_name=queue_name)}}">{{ queue_name }}</a>
+          <a href="{{url_for('dashboard.get_queue', queue_name=queue_name)}}">{{ queue_name }}</a>
           <div>
             <span class="badge bg-info" title="karton-core library version">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-seam" viewBox="0 0 16 16">
@@ -67,7 +67,7 @@
         </td>
         <td>
           {% set length = queue.crashed_tasks | length %}
-          {% set url = url_for("get_crashed_queue", queue_name=queue_name) %}
+          {% set url = url_for('dashboard.get_crashed_queue', queue_name=queue_name) %}
           {% set badgeClass = "bg-success" if length == 0 else "bg-danger" %}
           <span class="badge {{badgeClass}}">
               <a class="text-decoration-none" href={{url}} style="color: inherit">{{length}}</a>

@@ -32,10 +32,10 @@
       {% for task in queue.pending_tasks %}
       <tr>
         <td>
-          <a href="{{ url_for("get_queue", queue_name=identity) }}">{{identity}}</a>
+          <a href="{{ url_for('dashboard.get_queue', queue_name=identity) }}">{{identity}}</a>
         </td>
         <td>
-          <a href="{{ url_for("get_task", task_id=task.uid) }}">{{ task.uid }}</a>
+          <a href="{{ url_for('dashboard.get_task', task_id=task.uid) }}">{{ task.uid }}</a>
         </td>
         <td>
           {% if task.priority.value != 'normal' %}

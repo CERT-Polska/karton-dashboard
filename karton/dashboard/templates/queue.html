@@ -4,7 +4,7 @@
   <span class="align-middle">Tasks</span>
   {% if queue.pending_tasks %}
   <div class="btn-group float-right">
-    <form action={{url_for("cancel_pending_queue_tasks", queue_name=name)}} method="POST" id="cancelQueue">
+    <form action={{url_for('dashboard.cancel_pending_queue_tasks', queue_name=name)}} method="POST" id="cancelQueue">
       <button class="btn btn-sm btn-secondary" type="submit" form="cancelQueue" value="Submit" title="cancel all tasks">Cancel all</button>
     </form>  
   </div> 
@@ -23,7 +23,7 @@
     {% for task in queue.pending_tasks|sort(attribute='last_update', reverse=True) %}
     <tr>
       <td>
-        <a href="{{ url_for("get_task", task_id=task.uid) }}">{{ task.uid }}</a>
+        <a href="{{ url_for('dashboard.get_task', task_id=task.uid) }}">{{ task.uid }}</a>
       </td>
       <td><pre>{{ task.last_update|render_timestamp }}</pre></td>
       <td>
@@ -46,7 +46,7 @@
       </td>
       <td>
         <div class="btn-group">
-          <form action={{url_for("cancel_task", task_id=task.uid)}} method="POST">
+          <form action={{url_for('dashboard.cancel_task', task_id=task.uid)}} method="POST">
             <button class="btn btn-dark" type="submit" value="Submit" title="cancel task">✕</button>
           </form>
         </div>

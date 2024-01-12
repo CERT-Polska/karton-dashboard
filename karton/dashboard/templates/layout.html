@@ -4,24 +4,24 @@
 <head>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <title>{% block title %}karton-dashboard{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='bootstrap.css') }}">
-    <link rel="shortcut icon" href="{{ url_for('static', path='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('dashboard.static', path='bootstrap.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('dashboard.static', path='favicon.ico') }}">
 </head>
 
 <body>
     <div class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a href="{{ url_for("get_queues") }}" class="navbar-brand">karton</a>
+            <a href="{{ url_for('dashboard.get_queues') }}" class="navbar-brand">karton</a>
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for("get_queues") }}">home</a>
+                        <a class="nav-link" href="{{ url_for('dashboard.get_queues') }}">home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for("get_services") }}">services</a>
+                        <a class="nav-link" href="{{ url_for('dashboard.get_services') }}">services</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for("get_graph") }}">graph</a>
+                        <a class="nav-link" href="{{ url_for('dashboard.get_graph') }}">graph</a>
                     </li>
                 </ul>
             </div>

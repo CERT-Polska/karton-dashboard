@@ -50,9 +50,8 @@ static_folder = app_path / "static"
 graph_folder = app_path / "graph"
 app = Flask(__name__, static_folder=None)
 blueprint = Blueprint(
-    "karton-dashboard", __name__, template_folder=str(app_path / "templates")
+    "dashboard", __name__, template_folder=str(app_path / "templates")
 )
-app.register_blueprint(blueprint, url_prefix=base_path)
 
 
 markdown = mistune.create_markdown(
@@ -405,3 +404,6 @@ def generate_graph():
     raw_graph = graph.generate_graph()
 
     return raw_graph
+
+
+app.register_blueprint(blueprint, url_prefix=base_path)
