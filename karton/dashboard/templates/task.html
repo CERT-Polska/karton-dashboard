@@ -17,17 +17,17 @@
     <dd class="col-9">{{task.parent_uid}}</dd>
     <dt class="col-3">Root UID</dt>
     <dd class="col-9">
-      <a href="{{url_for('get_analysis', root_id=task.root_uid)}}">
+      <a href="{{url_for('dashboard.get_analysis', root_id=task.root_uid)}}">
       {{task.root_uid}}
       </a>
     </dd>
     <dt class="col-3">Origin</dt>
     <dd class="col-9">
-      <a href="/queue/{{task.headers['origin']}}">{{task.headers['origin']}}</a>
+      <a href="{{url_for('dashboard.get_queue', queue_name=task.headers['origin'])}}">{{task.headers['origin']}}</a>
     </dd>
     <dt class="col-3">Receiver</dt>
     <dd class="col-9">
-      <a href="/queue/{{task.headers['receiver']}}">{{task.headers['receiver']}}</a>
+      <a href="{{url_for('dashboard.get_queue', queue_name=task.headers['receiver'])}}">{{task.headers['receiver']}}</a>
     </dd>
     <dt class="col-3">Xrefs</dt>
     <dd class="col-9">
