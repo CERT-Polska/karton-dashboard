@@ -39,11 +39,7 @@ class KartonDashboard(KartonBase):
 
 karton = KartonDashboard()
 
-base_path = (
-    karton.config.get("dashboard", "base_path")
-    if karton.config.has_option("dashboard", "base_path")
-    else ""
-)
+base_path = karton.config.get("dashboard", "base_path", fallback="")
 
 app_path = Path(__file__).parent
 static_folder = app_path / "static"
