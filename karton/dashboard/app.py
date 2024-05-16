@@ -376,8 +376,8 @@ def get_task_api(task_id):
 @blueprint.route("/analysis/<root_id>", methods=["GET"])
 def get_analysis(root_id):
     state = KartonState(karton.backend)
-    analysis = state.analyses.get(root_id)
-    if not analysis:
+    analysis = state.get_analysis(root_id)
+    if not analysis.tasks:
         return jsonify({"error": "Analysis doesn't exist"}), 404
 
     return render_template(
