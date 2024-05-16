@@ -28,7 +28,7 @@
     {% for task in queue.crashed_tasks|sort(attribute='last_update', reverse=True) %}
     <tr>
       <td>
-        <a href="{{url_for('dashboard.get_task', task_id=task.uid)}}">{{ task.uid }}</a>
+        <a href="{{url_for('dashboard.get_task', task_id=task.uid)}}">{{ task.task_uid }}</a>
       </td>
       <td><pre>{{ task.last_update|render_timestamp }}</pre></td>
       <td>
