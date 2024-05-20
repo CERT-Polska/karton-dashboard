@@ -2,7 +2,7 @@
 {% block title %}karton task {{ task.uid }}{% endblock %}
 {% block content %}
 <div class="bs-component" style="padding-top: 10px">
-  <h3 class="text-center">task <code>{{ task.uid }}</code></h3>
+  <h3 class="text-center">task <code>{{ task.task_uid }}</code></h3>
 
   <dl class="row">
     <dt class="col-3">Status</dt>
@@ -11,7 +11,7 @@
     <dd class="col-9"><span class="badge bg-dark">{{task.priority.value}}</span></dd>
     <dt class="col-3">Last status change</dt>
     <dd class="col-9">{{task.last_update}} ({{task.last_update_delta}})</dd>
-    <dt class="col-3">UID</dt>
+    <dt class="col-3">Full UID</dt>
     <dd class="col-9">{{task.uid}}</dd>
     <dt class="col-3">Parent UID</dt>
     <dd class="col-9">{{task.parent_uid}}</dd>

@@ -76,6 +76,10 @@ class TaskView:
         return self._task.headers
 
     @property
+    def task_uid(self):
+        return self._task.task_uid
+
+    @property
     def uid(self) -> str:
         return self._task.uid
 
@@ -104,7 +108,7 @@ class TaskView:
         return pretty_delta(self.last_update)
 
     def to_dict(self) -> Dict[str, Any]:
-        return json.loads(self._task.serialize())
+        return self._task.to_dict()
 
     def to_json(self, indent=None) -> str:
         return self._task.serialize(indent=indent)
@@ -372,8 +376,8 @@ def get_task_api(task_id):
 @blueprint.route("/analysis/<root_id>", methods=["GET"])
 def get_analysis(root_id):
     state = KartonState(karton.backend)
-    analysis = state.analyses.get(root_id)
-    if not analysis:
+    analysis = state.get_analysis(root_id)
+    if not analysis.tasks:
         return jsonify({"error": "Analysis doesn't exist"}), 404
 
     return render_template(
@@ -384,8 +388,8 @@ def get_analysis(root_id):
 @blueprint.route("/api/analysis/<root_id>", methods=["GET"])
 def get_analysis_api(root_id):
     state = KartonState(karton.backend)
-    analysis = state.analyses.get(root_id)
-    if not analysis:
+    analysis = state.get_analysis(root_id)
+    if not analysis.tasks:
         return jsonify({"error": "Analysis doesn't exist"}), 404
 
     return jsonify(AnalysisView(analysis).to_dict())
