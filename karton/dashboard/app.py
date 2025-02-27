@@ -19,11 +19,16 @@ from flask import (
     request,
     send_from_directory,
 )
+from flask.wrappers import Response
 from karton.core.backend import KartonMetrics
 from karton.core.base import KartonBase
 from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
 from karton.core.task import Task, TaskPriority, TaskState
-from prometheus_client import Gauge, generate_latest  # type: ignore
+from prometheus_client import (  # type: ignore
+    CONTENT_TYPE_LATEST,
+    Gauge,
+    generate_latest,
+)
 
 from .__version__ import __version__
 from .graph import KartonGraph
@@ -206,7 +211,7 @@ def add_metrics(state: KartonState, metric: KartonMetrics, key: str) -> None:
 
 
 @blueprint.route("/varz", methods=["GET"])
-def varz():
+def varz() -> Response:
     """Update and get prometheus metrics"""
 
     state = KartonState(karton.backend)
@@ -237,7 +242,7 @@ def varz():
     add_metrics(state, KartonMetrics.TASK_GARBAGE_COLLECTED, "garbage-collected")
     add_metrics(state, KartonMetrics.TASK_PRODUCED, "produced")
 
-    return generate_latest()
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
 
 @blueprint.route("/static/<path:path>", methods=["GET"])
