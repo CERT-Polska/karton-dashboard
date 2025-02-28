@@ -10,17 +10,17 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: CERT-Polska/lint-python-action@v1
+      - uses: CERT-Polska/lint-python-action@v2
         with:
           source: karton/
   unittest:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        minor: [8, 9, 10]
+        minor: [9, 10, 11]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.${{ matrix.minor }}
       - run: pip install -r requirements.txt
