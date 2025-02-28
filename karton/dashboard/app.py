@@ -222,7 +222,7 @@ def varz() -> Response:
 
     for queue in state.queues.values():
         safe_name = re.sub("[^a-z0-9]", "_", queue.bind.identity.lower())
-        task_infos = defaultdict(int)
+        task_infos: dict[Tuple[str, TaskPriority, TaskState], int] = defaultdict(int)
         for task in queue.tasks:
             task_infos[(safe_name, task.priority, task.status)] += 1
 
