@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 import textwrap
 import threading
@@ -27,12 +28,22 @@ from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
 from karton.core.task import Task, TaskPriority, TaskState
 from prometheus_client import (  # type: ignore
     CONTENT_TYPE_LATEST,
+    GC_COLLECTOR,
+    PLATFORM_COLLECTOR,
+    PROCESS_COLLECTOR,
+    REGISTRY,
     Gauge,
     generate_latest,
 )
 
 from .__version__ import __version__
 from .graph import KartonGraph
+
+# Disable default collector metrics - https://prometheus.github.io/client_python/collector/
+if os.environ.get("PROMETHEUS_UNREGISTER_DCMs", False):
+    REGISTRY.unregister(GC_COLLECTOR)
+    REGISTRY.unregister(PLATFORM_COLLECTOR)
+    REGISTRY.unregister(PROCESS_COLLECTOR)
 
 logging.basicConfig(level=logging.INFO)
 
