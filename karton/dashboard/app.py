@@ -1,7 +1,9 @@
 import json
 import logging
+import os
 import re
 import textwrap
+import threading
 from collections import defaultdict
 from datetime import datetime
 from itertools import product
@@ -26,12 +28,22 @@ from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
 from karton.core.task import Task, TaskPriority, TaskState
 from prometheus_client import (  # type: ignore
     CONTENT_TYPE_LATEST,
+    GC_COLLECTOR,
+    PLATFORM_COLLECTOR,
+    PROCESS_COLLECTOR,
+    REGISTRY,
     Gauge,
     generate_latest,
 )
 
 from .__version__ import __version__
 from .graph import KartonGraph
+
+# Disable default collector metrics - https://prometheus.github.io/client_python/collector/
+if os.environ.get("PROMETHEUS_UNREGISTER_DCMs", False):
+    REGISTRY.unregister(GC_COLLECTOR)
+    REGISTRY.unregister(PLATFORM_COLLECTOR)
+    REGISTRY.unregister(PROCESS_COLLECTOR)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -210,39 +222,51 @@ def add_metrics(state: KartonState, metric: KartonMetrics, key: str) -> None:
         karton_metrics.labels(key, name).set(value)
 
 
+varz_lock = threading.Lock()
+
+
 @blueprint.route("/varz", methods=["GET"])
-def varz() -> Response:
+def varz():
     """Update and get prometheus metrics"""
 
-    state = KartonState(karton.backend)
+    # Allow only one thread to enter this function
+    if not varz_lock.acquire(blocking=False):
+        return jsonify({"error": "Previous vars collection is in a process"}), 429
 
-    # Clear the metrics completely to account for disappearing queues
-    karton_tasks.clear()
-    karton_replicas.clear()
+    try:
+        state = KartonState(karton.backend)
 
-    for queue in state.queues.values():
-        safe_name = re.sub("[^a-z0-9]", "_", queue.bind.identity.lower())
-        task_infos: Dict[Tuple[str, TaskPriority, TaskState], int] = defaultdict(int)
-        for task in queue.tasks:
-            task_infos[(safe_name, task.priority, task.status)] += 1
+        # Clear the metrics completely to account for disappearing queues
+        karton_tasks.clear()
+        karton_replicas.clear()
 
-        # set the default of active queues to 0 to avoid gaps in graphs
-        for priority, status in product(TaskPriority, TaskState):
-            karton_tasks.labels(safe_name, priority.value, status.value).set(0)
+        for queue in state.queues.values():
+            safe_name = re.sub("[^a-z0-9]", "_", queue.bind.identity.lower())
+            task_infos: Dict[Tuple[str, TaskPriority, TaskState], int] = defaultdict(
+                int
+            )
+            for task in queue.tasks:
+                task_infos[(safe_name, task.priority, task.status)] += 1
 
-        for (name, priority, status), count in task_infos.items():
-            karton_tasks.labels(name, priority.value, status.value).set(count)
+            # set the default of active queues to 0 to avoid gaps in graphs
+            for priority, status in product(TaskPriority, TaskState):
+                karton_tasks.labels(safe_name, priority.value, status.value).set(0)
 
-        replicas = len(state.replicas[queue.bind.identity])
-        karton_replicas.labels(safe_name, queue.bind.version).set(replicas)
+            for (name, priority, status), count in task_infos.items():
+                karton_tasks.labels(name, priority.value, status.value).set(count)
 
-    add_metrics(state, KartonMetrics.TASK_ASSIGNED, "assigned")
-    add_metrics(state, KartonMetrics.TASK_CONSUMED, "consumed")
-    add_metrics(state, KartonMetrics.TASK_CRASHED, "crashed")
-    add_metrics(state, KartonMetrics.TASK_GARBAGE_COLLECTED, "garbage-collected")
-    add_metrics(state, KartonMetrics.TASK_PRODUCED, "produced")
+            replicas = len(state.replicas[queue.bind.identity])
+            karton_replicas.labels(safe_name, queue.bind.version).set(replicas)
 
-    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+        add_metrics(state, KartonMetrics.TASK_ASSIGNED, "assigned")
+        add_metrics(state, KartonMetrics.TASK_CONSUMED, "consumed")
+        add_metrics(state, KartonMetrics.TASK_CRASHED, "crashed")
+        add_metrics(state, KartonMetrics.TASK_GARBAGE_COLLECTED, "garbage-collected")
+        add_metrics(state, KartonMetrics.TASK_PRODUCED, "produced")
+
+        return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+    finally:
+        varz_lock.release()
 
 
 @blueprint.route("/static/<path:path>", methods=["GET"])
