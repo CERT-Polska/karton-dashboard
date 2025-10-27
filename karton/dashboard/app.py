@@ -105,6 +105,10 @@ class TaskView:
         return self._task.status
 
     @property
+    def error(self) -> TaskState:
+        return self._task.error
+
+    @property
     def last_update(self) -> datetime:
         return datetime.fromtimestamp(self._task.last_update)
 
