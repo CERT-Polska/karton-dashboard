@@ -17,9 +17,11 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_file,
     send_from_directory,
 )
 from flask.wrappers import Response
+from karton.core import RemoteResource
 from karton.core.backend import KartonMetrics
 from karton.core.base import KartonBase
 from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
@@ -67,6 +69,34 @@ def cancel_tasks(tasks: List[Task]) -> None:
         karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
 
 
+class ResourceView:
+    def __init__(self, resource: RemoteResource) -> None:
+        self._resource = resource
+
+    @property
+    def bucket(self) -> str:
+        return self._resource.bucket
+
+    @property
+    def uid(self) -> str:
+        return self._resource.uid
+
+    @property
+    def name(self) -> str:
+        return self._resource.name
+
+    @property
+    def size(self) -> int:
+        return self._resource.size
+
+    @property
+    def sha256(self) -> Dict[str, Any]:
+        return self._resource.sha256
+
+    def to_json(self, indent=None) -> str:
+        return self._resource.serialize(indent=indent)
+
+
 class TaskView:
     """
     All problems in computer science can be solved by another
@@ -103,6 +133,14 @@ class TaskView:
     @property
     def status(self) -> TaskState:
         return self._task.status
+
+    @property
+    def payload(self) -> Dict[str, Any]:
+        return self._task.payload
+
+    @property
+    def payload_persistent(self) -> Dict[str, Any]:
+        return self._task.payload_persistent
 
     @property
     def last_update(self) -> datetime:
@@ -177,9 +215,37 @@ def render_description(description) -> Optional[str]:
     return markdown(textwrap.dedent(description))
 
 
+@app.template_filter("parse_resource")
+def parse_resource(resource_candidate) -> Optional[ResourceView]:
+    if isinstance(resource_candidate, RemoteResource):
+        return ResourceView(resource_candidate)
+    return None
+
+
 @app.template_filter("render_timestamp")
 def render_timestamp(timestamp) -> str:
     return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+
+
+@app.template_filter("filesize")
+def filesize(size) -> str:
+    """Format bytes as human-readable string (B, KB, MB, GB)."""
+    try:
+        s = float(size)
+    except Exception:
+        return str(size)
+
+    units = ["B", "KB", "MB", "GB", "TB", "PB"]
+    idx = 0
+    while s >= 1024 and idx < len(units) - 1:
+        s /= 1024.0
+        idx += 1
+
+    # Format: no decimals for bytes, trim trailing zeros for others
+    if units[idx] == "B":
+        return f"{int(s)} {units[idx]}"
+    out = f"{s:.2f}".rstrip("0").rstrip(".")
+    return f"{out} {units[idx]}"
 
 
 def get_xrefs(root_uid) -> List[Tuple[str, str]]:
@@ -412,6 +478,17 @@ def generate_graph():
     raw_graph = graph.generate_graph()
 
     return raw_graph
+
+
+@blueprint.route("/resource/download/<bucket>/<resource_uid>/<sha256>", methods=["GET"])
+def download_resource(bucket, resource_uid, sha256):
+
+    return send_file(
+        karton.backend.get_object(bucket, resource_uid),
+        mimetype="multipart/form-data",
+        as_attachment=True,
+        download_name=sha256,
+    )
 
 
 app.register_blueprint(blueprint, url_prefix=base_path)
