@@ -9,9 +9,9 @@ from networkx.readwrite.json_graph import (  # type: ignore
     adjacency_graph,
 )
 
-NODE_SIZE: Callable[
-    [DiGraph, str], float
-] = lambda graph, identity: 65 + 3.5 * graph.in_degree(identity)
+NODE_SIZE: Callable[[DiGraph, str], float] = (
+    lambda graph, identity: 65 + 3.5 * graph.in_degree(identity)
+)
 DEFAULT_OPTIONS = {"color": {"r": 51, "g": 153, "b": 243, "a": 0}, "size": NODE_SIZE}
 EMPTY_METADATA = {"version": "none", "info": "none"}
 OPTIONS = ["color", "size"]

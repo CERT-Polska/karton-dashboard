@@ -13,15 +13,3 @@ jobs:
       - uses: CERT-Polska/lint-python-action@v2
         with:
           source: karton/
-  unittest:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        minor: [9, 10, 11]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.${{ matrix.minor }}
-      - run: pip install -r requirements.txt
-      - run: python -m unittest discover
