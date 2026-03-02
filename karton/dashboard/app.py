@@ -225,12 +225,11 @@ def render_timestamp(timestamp) -> str:
 
 
 @app.template_filter("filesize")
-def filesize(size) -> str:
-    """Format bytes as human-readable string (B, KB, MB, GB)."""
-    try:
-        s = float(size)
-    except Exception:
-        return str(size)
+def filesize(size: int | None) -> str:
+    """Format bytes as human-readable string (B, KiB, MiB, GiB, ...)."""
+    if size is None:
+        return "N/A"
+    s = float(size)
 
     units = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]
     idx = 0
