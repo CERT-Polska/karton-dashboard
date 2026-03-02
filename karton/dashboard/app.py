@@ -235,7 +235,7 @@ def filesize(size) -> str:
     except Exception:
         return str(size)
 
-    units = ["B", "KB", "MB", "GB", "TB", "PB"]
+    units = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]
     idx = 0
     while s >= 1024 and idx < len(units) - 1:
         s /= 1024.0
