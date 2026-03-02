@@ -90,7 +90,7 @@ class ResourceView:
         return self._resource.size
 
     @property
-    def sha256(self) -> Dict[str, Any]:
+    def sha256(self) -> Optional[str]:
         return self._resource.sha256
 
     def to_json(self, indent=None) -> str:
