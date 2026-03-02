@@ -93,9 +93,6 @@ class ResourceView:
     def sha256(self) -> Optional[str]:
         return self._resource.sha256
 
-    def to_json(self, indent=None) -> str:
-        return self._resource.serialize(indent=indent)
-
 
 class TaskView:
     """
