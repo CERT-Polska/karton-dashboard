@@ -74,7 +74,7 @@ class ResourceView:
         self._resource = resource
 
     @property
-    def bucket(self) -> str:
+    def bucket(self) -> Optional[str]:
         return self._resource.bucket
 
     @property
