@@ -105,7 +105,7 @@ class TaskView:
         return self._task.status
 
     @property
-    def error(self) -> TaskState:
+    def error(self) -> Optional[List[str]]:
         return self._task.error
 
     @property
