@@ -40,7 +40,8 @@ from prometheus_client import (  # type: ignore
 from .__version__ import __version__
 from .graph import KartonGraph
 
-# Disable default collector metrics - https://prometheus.github.io/client_python/collector/
+# Disable default collector metrics
+# https://prometheus.github.io/client_python/collector/
 if os.environ.get("PROMETHEUS_UNREGISTER_DCMS", False):
     REGISTRY.unregister(GC_COLLECTOR)
     REGISTRY.unregister(PLATFORM_COLLECTOR)
