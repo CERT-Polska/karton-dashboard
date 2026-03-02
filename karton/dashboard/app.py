@@ -16,6 +16,7 @@ from flask import (
     Blueprint,
     Flask,
     jsonify,
+    make_response,
     redirect,
     render_template,
     request,
@@ -226,12 +227,15 @@ varz_lock = threading.Lock()
 
 
 @blueprint.route("/varz", methods=["GET"])
-def varz():
+def varz() -> Response:
     """Update and get prometheus metrics"""
 
     # Allow only one thread to enter this function
     if not varz_lock.acquire(blocking=False):
-        return jsonify({"error": "Previous vars collection is in a process"}), 429
+        return make_response(
+            jsonify({"error": "Previous vars collection is in a process"}),
+            429,
+        )
 
     try:
         state = KartonState(karton.backend)
