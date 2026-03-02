@@ -482,7 +482,6 @@ def generate_graph():
 
 @blueprint.route("/resource/download/<bucket>/<resource_uid>/<sha256>", methods=["GET"])
 def download_resource(bucket, resource_uid, sha256):
-
     return send_file(
         karton.backend.get_object(bucket, resource_uid),
         mimetype="multipart/form-data",
