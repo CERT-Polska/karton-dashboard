@@ -56,6 +56,13 @@
       {% endfor %}
     </dd>
   </dl>
+  
+  {% if task.error %}
+  <details>
+    <summary>Error</summary>
+    <pre><code>{{task.error | join("") }}</code></pre>
+  </details>
+  {% endif %}
 
   <h4>Raw</h4>
   <pre><code>{{task.to_json(indent=4)}}</code></pre>
