@@ -56,6 +56,13 @@
       {% endfor %}
     </dd>
   </dl>
+  
+  {% if task.error %}
+  <details>
+    <summary>Error</summary>
+    <pre><code>{{task.error | join("") }}</code></pre>
+  </details>
+  {% endif %}
 
 
   {% for payloads in [task.payload, task.payload_persistent] %}

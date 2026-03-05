@@ -138,6 +138,10 @@ class TaskView:
     @property
     def payload_persistent(self) -> Dict[str, Any]:
         return self._task.payload_persistent
+    
+    @property
+    def error(self) -> Optional[List[str]]:
+        return self._task.error
 
     @property
     def last_update(self) -> datetime:
