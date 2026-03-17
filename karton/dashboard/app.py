@@ -484,7 +484,7 @@ def generate_graph():
 def download_resource(bucket, resource_uid, sha256):
     return send_file(
         karton.backend.get_object(bucket, resource_uid),
-        mimetype="multipart/form-data",
+        mimetype="application/octet-stream",
         as_attachment=True,
         download_name=sha256,
     )
