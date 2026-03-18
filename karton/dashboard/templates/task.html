@@ -56,6 +56,22 @@
       {% endfor %}
     </dd>
   </dl>
+  
+  {% if task.error %}
+  <details>
+    <summary>Error</summary>
+    <pre><code>{{task.error | join("") }}</code></pre>
+  </details>
+  {% endif %}
+
+
+  {% for payloads in [task.payload, task.payload_persistent] %}
+    {% for pname, pcontent in payloads.items() %}
+      {% if pcontent | parse_resource %}
+  <a class="btn btn-info" href="{{ url_for('dashboard.download_resource', bucket=pcontent.bucket, resource_uid=pcontent.uid, sha256=pcontent.sha256) }}">{{ pcontent.name }} ({{ pcontent.size | filesize }})</a>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
 
   <h4>Raw</h4>
   <pre><code>{{task.to_json(indent=4)}}</code></pre>
