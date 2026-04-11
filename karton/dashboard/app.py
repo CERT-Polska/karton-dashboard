@@ -9,10 +9,11 @@ from datetime import datetime
 from itertools import product
 from operator import itemgetter
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import mistune  # type: ignore
 from flask import (
+    abort,
     Blueprint,
     Flask,
     jsonify,
@@ -81,6 +82,29 @@ markdown = mistune.create_markdown(
 def cancel_tasks(tasks: List[Task]) -> None:
     for task in tasks:
         karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
+
+
+def iter_remote_resources(payload_value: Any) -> Iterator[RemoteResource]:
+    if isinstance(payload_value, RemoteResource):
+        yield payload_value
+    elif isinstance(payload_value, dict):
+        for value in payload_value.values():
+            yield from iter_remote_resources(value)
+    elif isinstance(payload_value, (list, tuple, set)):
+        for value in payload_value:
+            yield from iter_remote_resources(value)
+
+
+def find_task_resource(
+    task: Task,
+    bucket: str,
+    resource_uid: str,
+) -> Optional[RemoteResource]:
+    for payload in (task.payload, task.payload_persistent):
+        for resource in iter_remote_resources(payload):
+            if resource.bucket == bucket and resource.uid == resource_uid:
+                return resource
+    return None
 
 
 class ResourceView:
@@ -509,13 +533,24 @@ def generate_graph():
     return raw_graph
 
 
-@blueprint.route("/resource/download/<bucket>/<resource_uid>/<sha256>", methods=["GET"])
-def download_resource(bucket, resource_uid, sha256):
+@blueprint.route(
+    "/resource/download/<task_id>/<bucket>/<resource_uid>",
+    methods=["GET"],
+)
+def download_resource(task_id, bucket, resource_uid):
+    task = karton.backend.get_task(task_id)
+    if not task:
+        abort(404)
+
+    resource = find_task_resource(task, bucket, resource_uid)
+    if not resource:
+        abort(404)
+
     return send_file(
-        karton.backend.get_object(bucket, resource_uid),
+        karton.backend.get_object(resource.bucket, resource.uid),
         mimetype="application/octet-stream",
         as_attachment=True,
-        download_name=sha256,
+        download_name=resource.sha256 or resource.name,
     )
 
 
