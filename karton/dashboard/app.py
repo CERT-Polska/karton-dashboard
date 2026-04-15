@@ -84,26 +84,14 @@ def cancel_tasks(tasks: List[Task]) -> None:
         karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
 
 
-def iter_remote_resources(payload_value: Any) -> Iterator[RemoteResource]:
-    if isinstance(payload_value, RemoteResource):
-        yield payload_value
-    elif isinstance(payload_value, dict):
-        for value in payload_value.values():
-            yield from iter_remote_resources(value)
-    elif isinstance(payload_value, (list, tuple, set)):
-        for value in payload_value:
-            yield from iter_remote_resources(value)
-
-
 def find_task_resource(
     task: Task,
     bucket: str,
     resource_uid: str,
 ) -> Optional[RemoteResource]:
-    for payload in (task.payload, task.payload_persistent):
-        for resource in iter_remote_resources(payload):
-            if resource.bucket == bucket and resource.uid == resource_uid:
-                return resource
+    for resource in task.iterate_resources():
+         if resource.bucket == bucket and resource.uid == resource_uid:
+             return resource
     return None
 
 
