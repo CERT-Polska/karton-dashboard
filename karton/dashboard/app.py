@@ -9,13 +9,13 @@ from datetime import datetime
 from itertools import product
 from operator import itemgetter
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import mistune  # type: ignore
 from flask import (
-    abort,
     Blueprint,
     Flask,
+    abort,
     jsonify,
     make_response,
     redirect,
@@ -90,8 +90,12 @@ def find_task_resource(
     resource_uid: str,
 ) -> Optional[RemoteResource]:
     for resource in task.iterate_resources():
-         if resource.bucket == bucket and resource.uid == resource_uid:
-             return resource
+        if (
+            isinstance(resource, RemoteResource)
+            and resource.bucket == bucket
+            and resource.uid == resource_uid
+        ):
+            return resource
     return None
 
 
