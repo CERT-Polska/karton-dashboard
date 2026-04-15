@@ -68,7 +68,18 @@
   {% for payloads in [task.payload, task.payload_persistent] %}
     {% for pname, pcontent in payloads.items() %}
       {% if pcontent | parse_resource %}
-  <a class="btn btn-info" href="{{ url_for('dashboard.download_resource', bucket=pcontent.bucket, resource_uid=pcontent.uid, sha256=pcontent.sha256) }}">{{ pcontent.name }} ({{ pcontent.size | filesize }})</a>
+  {% set download_url = url_for(
+    'dashboard.download_resource',
+    task_id=task.uid,
+    bucket=pcontent.bucket,
+    resource_uid=pcontent.uid
+  ) %}
+  <a
+    class="btn btn-info"
+    href="{{ download_url }}"
+  >
+    {{ pcontent.name }} ({{ pcontent.size | filesize }})
+  </a>
       {% endif %}
     {% endfor %}
   {% endfor %}

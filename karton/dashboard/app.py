@@ -15,6 +15,7 @@ import mistune  # type: ignore
 from flask import (
     Blueprint,
     Flask,
+    abort,
     jsonify,
     make_response,
     redirect,
@@ -81,6 +82,21 @@ markdown = mistune.create_markdown(
 def cancel_tasks(tasks: List[Task]) -> None:
     for task in tasks:
         karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
+
+
+def find_task_resource(
+    task: Task,
+    bucket: str,
+    resource_uid: str,
+) -> Optional[RemoteResource]:
+    for resource in task.iterate_resources():
+        if (
+            isinstance(resource, RemoteResource)
+            and resource.bucket == bucket
+            and resource.uid == resource_uid
+        ):
+            return resource
+    return None
 
 
 class ResourceView:
@@ -509,13 +525,24 @@ def generate_graph():
     return raw_graph
 
 
-@blueprint.route("/resource/download/<bucket>/<resource_uid>/<sha256>", methods=["GET"])
-def download_resource(bucket, resource_uid, sha256):
+@blueprint.route(
+    "/resource/download/<task_id>/<bucket>/<resource_uid>",
+    methods=["GET"],
+)
+def download_resource(task_id, bucket, resource_uid):
+    task = karton.backend.get_task(task_id)
+    if not task:
+        abort(404)
+
+    resource = find_task_resource(task, bucket, resource_uid)
+    if not resource:
+        abort(404)
+
     return send_file(
-        karton.backend.get_object(bucket, resource_uid),
+        karton.backend.get_object(resource.bucket, resource.uid),
         mimetype="application/octet-stream",
         as_attachment=True,
-        download_name=sha256,
+        download_name=resource.sha256 or resource.name,
     )
 
 
