@@ -333,8 +333,9 @@ def varz() -> Response:
             karton_replicas.labels(safe_name, queue.bind.version).set(replicas)
 
         for metric, values in state.backend.get_all_metrics().items():
-            for name, value in values.items():
-                karton_metrics.labels(metric.value, name).set(value)
+            for identity, value in values.items():
+                metric_name = metric.value[len("karton.metrics."):]
+                karton_metrics.labels(metric_name, identity).set(value)
 
         return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
     finally:
