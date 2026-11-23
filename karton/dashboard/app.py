@@ -29,7 +29,7 @@ from karton.core import RemoteResource
 from karton.core.backend import KartonMetrics
 from karton.core.base import KartonBase
 from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
-from karton.core.task import Task, TaskData, TaskPriority, TaskState
+from karton.core.task import Task, TaskPriority, TaskState
 from prometheus_client import (  # type: ignore
     CONTENT_TYPE_LATEST,
     GC_COLLECTOR,
@@ -181,7 +181,7 @@ class TaskView:
     def last_update_delta(self) -> str:
         return pretty_delta(self.last_update)
 
-    def to_dict(self) -> TaskData:
+    def to_dict(self) -> dict[str, Any]:
         return self._task.to_dict()
 
     def to_json(self, indent=None) -> str:
