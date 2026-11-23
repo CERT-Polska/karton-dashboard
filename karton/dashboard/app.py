@@ -29,7 +29,7 @@ from karton.core import RemoteResource
 from karton.core.backend import KartonMetrics
 from karton.core.base import KartonBase
 from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
-from karton.core.task import Task, TaskPriority, TaskState, TaskData
+from karton.core.task import Task, TaskData, TaskPriority, TaskState
 from prometheus_client import (  # type: ignore
     CONTENT_TYPE_LATEST,
     GC_COLLECTOR,
