@@ -58,7 +58,6 @@ logging.basicConfig(level=logging.INFO)
 class KartonDashboard(KartonBase):
     identity = "karton.dashboard"
     version = __version__
-    with_service_info = True
 
 
 karton = KartonDashboard()
@@ -339,7 +338,7 @@ def varz() -> Response:
 
         for metric, values in state.backend.get_all_metrics().items():
             for identity, value in values.items():
-                metric_name = metric.value[len("karton.metrics."):]
+                metric_name = metric.value[len("karton.metrics.") :]
                 karton_metrics.labels(metric_name, identity).set(value)
 
         return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
