@@ -9,7 +9,7 @@ from datetime import datetime
 from itertools import product
 from operator import itemgetter
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import mistune  # type: ignore
 from flask import (
@@ -45,7 +45,7 @@ from .graph import KartonGraph
 
 # Disable default collector metrics
 # https://prometheus.github.io/client_python/collector/
-if os.environ.get("PROMETHEUS_UNREGISTER_DCMS", False):
+if os.environ.get("PROMETHEUS_UNREGISTER_DCMS"):
     REGISTRY.unregister(GC_COLLECTOR)
     REGISTRY.unregister(PLATFORM_COLLECTOR)
     REGISTRY.unregister(PROCESS_COLLECTOR)
@@ -79,7 +79,7 @@ markdown = mistune.create_markdown(
 )
 
 
-def cancel_tasks(tasks: List[Task]) -> None:
+def cancel_tasks(tasks: list[Task]) -> None:
     for task in tasks:
         karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
 
@@ -88,7 +88,7 @@ def find_task_resource(
     task: Task,
     bucket: str,
     resource_uid: str,
-) -> Optional[RemoteResource]:
+) -> RemoteResource | None:
     for resource in task.iterate_resources():
         if (
             isinstance(resource, RemoteResource)
@@ -104,7 +104,7 @@ class ResourceView:
         self._resource = resource
 
     @property
-    def bucket(self) -> Optional[str]:
+    def bucket(self) -> str | None:
         return self._resource.bucket
 
     @property
@@ -120,7 +120,7 @@ class ResourceView:
         return self._resource.size
 
     @property
-    def sha256(self) -> Optional[str]:
+    def sha256(self) -> str | None:
         return self._resource.sha256
 
 
@@ -134,7 +134,7 @@ class TaskView:
         self._task = task
 
     @property
-    def headers(self) -> Dict[str, Any]:
+    def headers(self) -> dict[str, Any]:
         return self._task.headers
 
     @property
@@ -146,7 +146,7 @@ class TaskView:
         return self._task.uid
 
     @property
-    def parent_uid(self) -> Optional[str]:
+    def parent_uid(self) -> str | None:
         return self._task.parent_uid
 
     @property
@@ -162,15 +162,15 @@ class TaskView:
         return self._task.status
 
     @property
-    def payload(self) -> Dict[str, Any]:
+    def payload(self) -> dict[str, Any]:
         return self._task.payload
 
     @property
-    def payload_persistent(self) -> Dict[str, Any]:
+    def payload_persistent(self) -> dict[str, Any]:
         return self._task.payload_persistent
 
     @property
-    def error(self) -> Optional[List[str]]:
+    def error(self) -> list[str] | None:
         return self._task.error
 
     @property
@@ -181,7 +181,7 @@ class TaskView:
     def last_update_delta(self) -> str:
         return pretty_delta(self.last_update)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return self._task.to_dict()
 
     def to_json(self, indent=None) -> str:
@@ -192,7 +192,7 @@ class QueueView:
     def __init__(self, queue: KartonQueue) -> None:
         self._queue = queue
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         tasks = sorted(
             self._queue.pending_tasks, key=lambda t: t.last_update, reverse=True
         )
@@ -217,7 +217,7 @@ class AnalysisView:
     def __init__(self, analysis: KartonAnalysis) -> None:
         self._analysis = analysis
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "uid": self._analysis.root_uid,
             "queues": {
@@ -240,14 +240,14 @@ def pretty_delta(dt: datetime) -> str:
 
 
 @app.template_filter("render_description")
-def render_description(description) -> Optional[str]:
+def render_description(description) -> str | None:
     if not description:
         return None
     return markdown(textwrap.dedent(description))
 
 
 @app.template_filter("parse_resource")
-def parse_resource(resource_candidate) -> Optional[ResourceView]:
+def parse_resource(resource_candidate) -> ResourceView | None:
     if isinstance(resource_candidate, RemoteResource):
         return ResourceView(resource_candidate)
     return None
@@ -278,7 +278,7 @@ def filesize(size: int | None) -> str:
     return f"{out} {units[idx]}"
 
 
-def get_xrefs(root_uid) -> List[Tuple[str, str]]:
+def get_xrefs(root_uid) -> list[tuple[str, str]]:
     if not karton.config.has_option("dashboard", "xrefs"):
         return []
     xrefs = json.loads(karton.config.get("dashboard", "xrefs"))
@@ -329,7 +329,7 @@ def varz() -> Response:
 
         for queue in state.queues.values():
             safe_name = re.sub("[^a-z0-9]", "_", queue.bind.identity.lower())
-            task_infos: Dict[Tuple[str, TaskPriority, TaskState], int] = defaultdict(
+            task_infos: dict[tuple[str, TaskPriority, TaskState], int] = defaultdict(
                 int
             )
             for task in queue.tasks:

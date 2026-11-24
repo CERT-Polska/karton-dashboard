@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Set, cast
+from collections.abc import Callable
+from typing import Any, cast
 
 from karton.core.inspect import KartonState
 from networkx import DiGraph, generate_gexf  # type: ignore
@@ -9,8 +10,8 @@ from networkx.readwrite.json_graph import (  # type: ignore
     adjacency_graph,
 )
 
-NODE_SIZE: Callable[[DiGraph, str], float] = (
-    lambda graph, identity: 65 + 3.5 * graph.in_degree(identity)
+NODE_SIZE: Callable[[DiGraph, str], float] = lambda graph, identity: (
+    65 + 3.5 * graph.in_degree(identity)
 )
 DEFAULT_OPTIONS = {"color": {"r": 51, "g": 153, "b": 243, "a": 0}, "size": NODE_SIZE}
 EMPTY_METADATA = {"version": "none", "info": "none"}
@@ -19,14 +20,14 @@ OPTIONS = ["color", "size"]
 
 class KartonNode:
     def __init__(
-        self, identity: str, metadata: Dict[str, str], filters, outputs
+        self, identity: str, metadata: dict[str, str], filters, outputs
     ) -> None:
         self.identity = identity
         self.metadata = metadata
         self.filters = filters
         self.outputs = outputs
 
-    def filter_contained(self, filter: Dict[str, str], output: Dict[str, str]) -> bool:
+    def filter_contained(self, filter: dict[str, str], output: dict[str, str]) -> bool:
         return all(item in output.items() for item in filter.items())
 
     def __contains__(self, other: KartonNode) -> bool:
@@ -42,13 +43,13 @@ class KartonNode:
 class KartonGraph:
     def __init__(self, state: KartonState) -> None:
         self.state: KartonState = state
-        self.nodes: List[KartonNode] = []
-        self.graph: Dict[str, Set[str]] = {}
+        self.nodes: list[KartonNode] = []
+        self.graph: dict[str, set[str]] = {}
 
     def style_nodes(
         self,
         graph: DiGraph,
-        options: Optional[Dict[str, Any]] = None,
+        options: dict[str, Any] | None = None,
     ) -> None:
         """Style the graph.
 
@@ -79,7 +80,7 @@ class KartonGraph:
             graph.nodes[node.identity]["info"] = node.metadata["info"]
 
     def build_nodes(self) -> None:
-        values = {}
+        values: dict[str, dict[str, Any]] = {}
 
         for bind in self.state.backend.get_binds():
             if bind.identity and bind.identity not in values:
@@ -103,8 +104,8 @@ class KartonGraph:
                 }
             values[outputs_object.identity]["outputs"] = outputs_object.outputs
 
-        for identity in values.keys():
-            metadata = cast(Dict[str, str], values[identity]["metadata"])
+        for identity in values:
+            metadata = cast(dict[str, str], values[identity]["metadata"])
             node = KartonNode(
                 identity=identity,
                 metadata=metadata,

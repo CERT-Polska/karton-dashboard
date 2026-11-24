@@ -11,3 +11,5 @@ config.py
 *.pyc
 karton.ini
 build/
+dist/
+*.egg-info/

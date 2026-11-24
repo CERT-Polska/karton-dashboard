@@ -1,11 +1,12 @@
-FROM python:3.10
+FROM python:3.14-slim-trixie
 
 WORKDIR /app/service
 COPY ./MANIFEST.in ./MANIFEST.in
-COPY ./requirements.txt ./requirements.txt
-RUN pip install -r requirements.txt
+COPY ./pyproject.toml ./pyproject.toml
+COPY ./karton/dashboard/__version__.py ./karton/dashboard/__version__.py
+RUN pip install --only-deps .
 COPY ./README.md ./README.md
 COPY ./karton ./karton
-COPY ./setup.py ./setup.py
 RUN pip install .
-CMD karton-dashboard run --host 0.0.0.0
+ENTRYPOINT ["karton-dashboard"]
+CMD ["run", "--host", "0.0.0.0"]
