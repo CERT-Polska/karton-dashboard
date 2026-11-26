@@ -81,11 +81,6 @@ markdown = mistune.create_markdown(
 )
 
 
-def cancel_tasks(tasks: list[Task]) -> None:
-    for task in tasks:
-        karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
-
-
 def find_task_resource(
     task: Task,
     bucket: str,
@@ -318,6 +313,7 @@ def varz() -> ResponseReturnValue:
         # Clear the metrics completely to account for disappearing queues
         karton_tasks.clear()
         karton_replicas.clear()
+        karton_metrics.clear()
 
         for queue in state.queues.values():
             safe_name = re.sub("[^a-z0-9]", "_", queue.bind.identity.lower())
@@ -334,12 +330,11 @@ def varz() -> ResponseReturnValue:
             for (name, priority, status), count in task_infos.items():
                 karton_tasks.labels(name, priority.value, status.value).set(count)
 
-            replicas = len(state.replicas[queue.bind.identity])
-            karton_replicas.labels(safe_name, queue.bind.version).set(replicas)
+            karton_replicas.labels(safe_name, queue.bind.version).set(queue.replicas)
 
         for metric, values in state.backend.get_all_metrics().items():
             for identity, value in values.items():
-                metric_name = metric.value[len("karton.metrics.") :]
+                metric_name = metric.value.removeprefix("karton.metrics.")
                 karton_metrics.labels(metric_name, identity).set(value)
 
         return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
