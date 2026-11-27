@@ -4,12 +4,14 @@ import os
 import re
 import textwrap
 import threading
+import unicodedata
 from collections import defaultdict
 from datetime import datetime
 from itertools import product
 from operator import itemgetter
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import mistune  # type: ignore
 from flask import (
@@ -21,15 +23,15 @@ from flask import (
     redirect,
     render_template,
     request,
-    send_file,
     send_from_directory,
 )
+from flask.typing import ResponseReturnValue
 from flask.wrappers import Response
 from karton.core import RemoteResource
-from karton.core.backend import KartonMetrics
+from karton.core.backend.base import KartonExternalServiceInfo
 from karton.core.base import KartonBase
 from karton.core.inspect import KartonAnalysis, KartonQueue, KartonState
-from karton.core.task import Task, TaskPriority, TaskState
+from karton.core.task import Task, TaskData, TaskPriority, TaskState
 from prometheus_client import (  # type: ignore
     CONTENT_TYPE_LATEST,
     GC_COLLECTOR,
@@ -39,6 +41,7 @@ from prometheus_client import (  # type: ignore
     Gauge,
     generate_latest,
 )
+from werkzeug.datastructures import Headers
 
 from .__version__ import __version__
 from .graph import KartonGraph
@@ -56,7 +59,6 @@ logging.basicConfig(level=logging.INFO)
 class KartonDashboard(KartonBase):
     identity = "karton.dashboard"
     version = __version__
-    with_service_info = True
 
 
 karton = KartonDashboard()
@@ -77,11 +79,6 @@ markdown = mistune.create_markdown(
     renderer="html",
     plugins=["url", "strikethrough", "footnotes", "table"],
 )
-
-
-def cancel_tasks(tasks: list[Task]) -> None:
-    for task in tasks:
-        karton.backend.set_task_status(task=task, status=TaskState.FINISHED)
 
 
 def find_task_resource(
@@ -181,7 +178,7 @@ class TaskView:
     def last_update_delta(self) -> str:
         return pretty_delta(self.last_update)
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> TaskData:
         return self._task.to_dict()
 
     def to_json(self, indent=None) -> str:
@@ -296,21 +293,11 @@ karton_tasks = Gauge("karton_tasks", "Pending tasks", ("name", "priority", "stat
 karton_replicas = Gauge("karton_replicas", "Replicas", ("name", "version"))
 karton_metrics = Gauge("karton_metrics", "Metrics", ("metric", "name"))
 
-
-def add_metrics(state: KartonState, metric: KartonMetrics, key: str) -> None:
-    metrics = {
-        k: int(v)
-        for k, v in state.backend.redis.hgetall(metric.value).items()  # type: ignore
-    }
-    for name, value in metrics.items():
-        karton_metrics.labels(key, name).set(value)
-
-
 varz_lock = threading.Lock()
 
 
 @blueprint.route("/varz", methods=["GET"])
-def varz() -> Response:
+def varz() -> ResponseReturnValue:
     """Update and get prometheus metrics"""
 
     # Allow only one thread to enter this function
@@ -326,6 +313,7 @@ def varz() -> Response:
         # Clear the metrics completely to account for disappearing queues
         karton_tasks.clear()
         karton_replicas.clear()
+        karton_metrics.clear()
 
         for queue in state.queues.values():
             safe_name = re.sub("[^a-z0-9]", "_", queue.bind.identity.lower())
@@ -342,14 +330,12 @@ def varz() -> Response:
             for (name, priority, status), count in task_infos.items():
                 karton_tasks.labels(name, priority.value, status.value).set(count)
 
-            replicas = len(state.replicas[queue.bind.identity])
-            karton_replicas.labels(safe_name, queue.bind.version).set(replicas)
+            karton_replicas.labels(safe_name, queue.bind.version).set(queue.replicas)
 
-        add_metrics(state, KartonMetrics.TASK_ASSIGNED, "assigned")
-        add_metrics(state, KartonMetrics.TASK_CONSUMED, "consumed")
-        add_metrics(state, KartonMetrics.TASK_CRASHED, "crashed")
-        add_metrics(state, KartonMetrics.TASK_GARBAGE_COLLECTED, "garbage-collected")
-        add_metrics(state, KartonMetrics.TASK_PRODUCED, "produced")
+        for metric, values in state.backend.get_all_metrics().items():
+            for identity, value in values.items():
+                metric_name = metric.value.removeprefix("karton.metrics.")
+                karton_metrics.labels(metric_name, identity).set(value)
 
         return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
     finally:
@@ -357,27 +343,36 @@ def varz() -> Response:
 
 
 @blueprint.route("/static/<path:path>", methods=["GET"])
-def static(path: str):
+def static(path: str) -> ResponseReturnValue:
     return send_from_directory(static_folder, path)
 
 
 @blueprint.route("/", methods=["GET"])
-def get_queues():
+def get_queues() -> ResponseReturnValue:
     state = KartonState(karton.backend)
     return render_template("index.html", queues=state.queues)
 
 
 @blueprint.route("/services", methods=["GET"])
-def get_services():
-    aggregated_services = defaultdict(list)
+def get_services() -> ResponseReturnValue:
+    aggregated_services: dict[tuple[str, str, str], list[KartonExternalServiceInfo]] = (
+        defaultdict(list)
+    )
     online_services = karton.backend.get_online_services()
     for service in online_services:
-        aggregated_services[service].append(service)
+        # We need None -> "" because keys are sorted
+        aggregated_services[
+            (
+                service.identity,
+                service.karton_version or "",
+                service.service_version or "",
+            )
+        ].append(service)
     return render_template("services.html", services=aggregated_services)
 
 
 @blueprint.route("/api/queues", methods=["GET"])
-def get_queues_api():
+def get_queues_api() -> ResponseReturnValue:
     state = KartonState(karton.backend)
     return jsonify(
         {
@@ -388,41 +383,40 @@ def get_queues_api():
 
 
 @blueprint.route("/<queue_name>/restart_crashed", methods=["POST"])
-def restart_crashed_queue_tasks(queue_name):
+def restart_crashed_queue_tasks(queue_name) -> ResponseReturnValue:
     state = KartonState(karton.backend)
-    queue = state.queues.get(queue_name)
+    queue = state.binds.get(queue_name)
     if not queue:
         return jsonify({"error": "Queue doesn't exist"}), 404
 
-    for task in queue.crashed_tasks:
-        karton.backend.restart_task(task)
+    karton.backend.restart_queue_crashed_tasks(queue_name)
     return redirect(request.referrer)
 
 
 @blueprint.route("/<queue_name>/cancel_crashed", methods=["POST"])
-def cancel_crashed_queue_tasks(queue_name):
+def cancel_crashed_queue_tasks(queue_name) -> ResponseReturnValue:
     state = KartonState(karton.backend)
-    queue = state.queues.get(queue_name)
+    queue = state.binds.get(queue_name)
     if not queue:
         return jsonify({"error": "Queue doesn't exist"}), 404
 
-    cancel_tasks(queue.crashed_tasks)
+    karton.backend.cancel_queue_tasks(queue_name, "crashed")
     return redirect(request.referrer)
 
 
 @blueprint.route("/<queue_name>/cancel_pending", methods=["POST"])
-def cancel_pending_queue_tasks(queue_name):
+def cancel_pending_queue_tasks(queue_name) -> ResponseReturnValue:
     state = KartonState(karton.backend)
-    queue = state.queues.get(queue_name)
+    queue = state.binds.get(queue_name)
     if not queue:
         return jsonify({"error": "Queue doesn't exist"}), 404
 
-    cancel_tasks(queue.pending_tasks)
+    karton.backend.cancel_queue_tasks(queue_name, "pending")
     return redirect(request.referrer)
 
 
 @blueprint.route("/restart_task/<task_id>/restart", methods=["POST"])
-def restart_task(task_id):
+def restart_task(task_id) -> ResponseReturnValue:
     task = karton.backend.get_task(task_id)
     if not task:
         return jsonify({"error": "Task doesn't exist"}), 404
@@ -432,17 +426,17 @@ def restart_task(task_id):
 
 
 @blueprint.route("/cancel_task/<task_id>/cancel", methods=["POST"])
-def cancel_task(task_id):
+def cancel_task(task_id) -> ResponseReturnValue:
     task = karton.backend.get_task(task_id)
     if not task:
         return jsonify({"error": "Task doesn't exist"}), 404
 
-    cancel_tasks([task])
+    karton.backend.cancel_task(task)
     return redirect(request.referrer)
 
 
 @blueprint.route("/queue/<queue_name>", methods=["GET"])
-def get_queue(queue_name):
+def get_queue(queue_name) -> ResponseReturnValue:
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
     if not queue:
@@ -452,7 +446,7 @@ def get_queue(queue_name):
 
 
 @blueprint.route("/queue/<queue_name>/crashed", methods=["GET"])
-def get_crashed_queue(queue_name):
+def get_crashed_queue(queue_name) -> ResponseReturnValue:
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
     if not queue:
@@ -462,7 +456,7 @@ def get_crashed_queue(queue_name):
 
 
 @blueprint.route("/api/queue/<queue_name>", methods=["GET"])
-def get_queue_api(queue_name):
+def get_queue_api(queue_name) -> ResponseReturnValue:
     state = KartonState(karton.backend)
     queue = state.queues.get(queue_name)
     if not queue:
@@ -471,7 +465,7 @@ def get_queue_api(queue_name):
 
 
 @blueprint.route("/task/<task_id>", methods=["GET"])
-def get_task(task_id):
+def get_task(task_id) -> ResponseReturnValue:
     task = karton.backend.get_task(task_id)
     if not task:
         return jsonify({"error": "Task doesn't exist"}), 404
@@ -482,7 +476,7 @@ def get_task(task_id):
 
 
 @blueprint.route("/api/task/<task_id>", methods=["GET"])
-def get_task_api(task_id):
+def get_task_api(task_id) -> ResponseReturnValue:
     task = karton.backend.get_task(task_id)
     if not task:
         return jsonify({"error": "Task doesn't exist"}), 404
@@ -490,7 +484,7 @@ def get_task_api(task_id):
 
 
 @blueprint.route("/analysis/<root_id>", methods=["GET"])
-def get_analysis(root_id):
+def get_analysis(root_id) -> ResponseReturnValue:
     state = KartonState(karton.backend)
     analysis = state.get_analysis(root_id)
     if not analysis.tasks:
@@ -502,7 +496,7 @@ def get_analysis(root_id):
 
 
 @blueprint.route("/api/analysis/<root_id>", methods=["GET"])
-def get_analysis_api(root_id):
+def get_analysis_api(root_id) -> ResponseReturnValue:
     state = KartonState(karton.backend)
     analysis = state.get_analysis(root_id)
     if not analysis.tasks:
@@ -512,12 +506,12 @@ def get_analysis_api(root_id):
 
 
 @blueprint.route("/graph", methods=["GET"])
-def get_graph():
+def get_graph() -> ResponseReturnValue:
     return render_template("graph.html")
 
 
 @blueprint.route("/graph/generate", methods=["GET"])
-def generate_graph():
+def generate_graph() -> ResponseReturnValue:
     state = KartonState(karton.backend)
     graph = KartonGraph(state)
     raw_graph = graph.generate_graph()
@@ -525,11 +519,27 @@ def generate_graph():
     return raw_graph
 
 
+def content_disposition_headers(download_name: str) -> Headers:
+    # We can't use send_file, because we iterate the response
+    # But we can borrow a chunk of code from werkzeug.utils
+    headers = Headers()
+    if download_name.isascii():
+        names = {"filename": download_name}
+    else:
+        simple = unicodedata.normalize("NFKD", download_name)
+        simple = simple.encode("ascii", "ignore").decode("ascii")
+        # safe = RFC 5987 attr-char
+        quoted = quote(download_name, safe="!#$&+-.^_`|~")
+        names = {"filename": simple, "filename*": f"UTF-8''{quoted}"}
+    headers.set("Content-Disposition", "attachment", **names)
+    return headers
+
+
 @blueprint.route(
     "/resource/download/<task_id>/<bucket>/<resource_uid>",
     methods=["GET"],
 )
-def download_resource(task_id, bucket, resource_uid):
+def download_resource(task_id, bucket, resource_uid) -> ResponseReturnValue:
     task = karton.backend.get_task(task_id)
     if not task:
         abort(404)
@@ -538,11 +548,11 @@ def download_resource(task_id, bucket, resource_uid):
     if not resource:
         abort(404)
 
-    return send_file(
-        karton.backend.get_object(resource.bucket, resource.uid),
+    stream = karton.backend.iter_download_resource(resource)
+    return Response(
+        stream,
         mimetype="application/octet-stream",
-        as_attachment=True,
-        download_name=resource.sha256 or resource.name,
+        headers=content_disposition_headers(resource.sha256 or resource.name),
     )
 
 
